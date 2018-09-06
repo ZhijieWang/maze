@@ -84,10 +84,10 @@ func RandMove(w World, r Robot, t int) Trace {
 }
 
 // Simulate is a step function for time synchronized simulation
-func (w World) Simulate(policy func(w World, robot Robot, t int)Trace ) {
+func (w World) Simulate(policy func(w World, robot Robot, t int)Trace, graphUpdate func(world World, trace Trace)) {
 	w.timestamp++
 	for _, r := range w.robots {
-	w.GraphReWeightByRadiation(RandMove(w, r, w.timestamp))
+	graphUpdate(w, policy(w, r, w.timestamp))
 	}
 	for _, edge := range w.grid.WeightedEdges(){
 		fmt.Printf("%s %s %f\n", edge.From(), edge.To(), edge.Weight())
@@ -107,14 +107,13 @@ func (w World) EdgeWeightPropagation(start graph.Node, steps, depth int){
 	}
 }
 // GraphReWeightByRadiation is a graph weight propagation method to recalculate graph edge weight by radiation
-func (w *World) GraphReWeightByRadiation(trace Trace){
-	for _, i := range w.robots{
-		w.EdgeWeightPropagation(i.location, 3,1)
+func GraphReWeightByRadiation(world World, trace Trace){
+	for _, i := range world.robots{
+		world.EdgeWeightPropagation(i.location, 3,1)
 	}
 }
 // UpdateWeight is a short hand for update edge weight
 func (w World) UpdateWeight(e graph.WeightedEdge, weightDelta float64){
-	print(weightDelta)
 	w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-weightDelta))
 }
 // TestUpdate is a debug intermediar to make sure access pointers are defined correctly

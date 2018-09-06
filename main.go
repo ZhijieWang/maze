@@ -22,6 +22,6 @@ import (
 func main() {
 	cmd.Execute()
 	g := common.CreateWorld(3)
-	g.Simulate(common.RandMove)
-	g.Simulate(common.RandMove)
+	g.Simulate(common.RandMove, common.GraphReWeightByRadiation)
+	g.Simulate(common.RandMove, common.GraphReWeightByRadiation)
 }
