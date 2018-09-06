@@ -20,3 +20,5 @@ First step is channels, let next be RPC, and finally just messages flying around
 
 
 
+# maze
+A simulator for robotic task planning over a network graph with task dependencies
