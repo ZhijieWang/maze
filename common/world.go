@@ -22,7 +22,7 @@ func CreateWorld(numRobots int, concurrent bool) *World {
 	w := &World{}
 	w.Concurrency = concurrent
 
-	g := NewConcurrentWeightedUndirectedGraph(1, 10000000)
+	g := simple.NewWeightedUndirectedGraph(1, 10000000)
 	for i := 1; i < 13; i++ {
 		g.AddNode(simple.Node(i))
 	}
@@ -61,7 +61,7 @@ type Robot struct {
 type World struct {
 	timestamp   int
 	robots      []Robot
-	grid        *ConcurrentWeightedUndirectedGraph
+	grid        *simple.WeightedUndirectedGraph
 	Concurrency bool
 }
 
@@ -106,10 +106,10 @@ func (w World) EdgeWeightPropagation(start graph.Node, steps, depth int) {
 	if steps > depth {
 		nodes := w.grid.From(start.ID())
 		for _, n := range nodes {
-			go func() {
-				w.UpdateWeight(w.grid.WeightedEdgeBetween(start.ID(), n.ID()), float64(1.0/float64(depth*depth)))
-				w.EdgeWeightPropagation(n, steps, depth+1)
-			}()
+
+			w.UpdateWeight(w.grid.WeightedEdgeBetween(start.ID(), n.ID()), float64(1.0/float64(depth*depth)))
+			w.EdgeWeightPropagation(n, steps, depth+1)
+
 		}
 
 	}
