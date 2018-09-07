@@ -2,10 +2,11 @@ package common
 
 import (
 	"fmt"
-	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/simple"
 	"math/rand"
 	"time"
+
+	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 //	1	- 	5	-	9
@@ -17,10 +18,11 @@ import (
 //	4	- 	8 	-	12
 
 //CreateWorld generates a network of 12 nodes
-func CreateWorld(numRobots int) *World {
+func CreateWorld(numRobots int, concurrent bool) *World {
 	w := &World{}
+	w.Concurrency = concurrent
 
-	g := simple.NewWeightedUndirectedGraph(1, 10000000)
+	g := NewConcurrentWeightedUndirectedGraph(1, 10000000)
 	for i := 1; i < 13; i++ {
 		g.AddNode(simple.Node(i))
 	}
@@ -57,9 +59,10 @@ type Robot struct {
 
 // World is a data holder for simulation
 type World struct {
-	timestamp int
-	robots    []Robot
-	grid      *simple.WeightedUndirectedGraph
+	timestamp   int
+	robots      []Robot
+	grid        *ConcurrentWeightedUndirectedGraph
+	Concurrency bool
 }
 
 // Trace is data structure to hold data that can be used for path planning
@@ -84,14 +87,17 @@ func RandMove(w World, r Robot, t int) Trace {
 }
 
 // Simulate is a step function for time synchronized simulation
-func (w World) Simulate(policy func(w World, robot Robot, t int) Trace, graphUpdate func(world World, trace Trace)) {
+func (w World) Simulate(policy func(w World, robot Robot, t int) Trace, graphUpdate func(world *World, trace Trace)) {
 	w.timestamp++
 	for _, r := range w.robots {
-		graphUpdate(w, policy(w, r, w.timestamp))
+
+		t := policy(w, r, w.timestamp)
+		graphUpdate(&w, t)
+
 	}
-	for _, edge := range w.grid.WeightedEdges() {
-		fmt.Printf("%s %s %f\n", edge.From(), edge.To(), edge.Weight())
-	}
+	//	for _, edge := range w.grid.WeightedEdges() {
+	//		fmt.Printf("%s %s %f\n", edge.From(), edge.To(), edge.Weight())
+	//	}
 
 }
 
@@ -100,7 +106,7 @@ func (w World) EdgeWeightPropagation(start graph.Node, steps, depth int) {
 	if steps > depth {
 		nodes := w.grid.From(start.ID())
 		for _, n := range nodes {
-			w.UpdateWeight(w.grid.WeightedEdge(start.ID(), n.ID()), float64(1.0/float64(depth*depth)))
+			w.UpdateWeight(w.grid.WeightedEdgeBetween(start.ID(), n.ID()), float64(1.0/float64(depth*depth)))
 			w.EdgeWeightPropagation(n, steps, depth+1)
 		}
 
@@ -108,7 +114,7 @@ func (w World) EdgeWeightPropagation(start graph.Node, steps, depth int) {
 }
 
 // GraphReWeightByRadiation is a graph weight propagation method to recalculate graph edge weight by radiation
-func GraphReWeightByRadiation(world World, trace Trace) {
+func GraphReWeightByRadiation(world *World, trace Trace) {
 	for _, i := range world.robots {
 		world.EdgeWeightPropagation(i.location, 3, 1)
 	}
@@ -116,7 +122,12 @@ func GraphReWeightByRadiation(world World, trace Trace) {
 
 // UpdateWeight is a short hand for update edge weight
 func (w World) UpdateWeight(e graph.WeightedEdge, weightDelta float64) {
-	w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-weightDelta))
+	if w.Concurrency {
+		ne := w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-weightDelta)
+		w.grid.ConcurrentSetWeightedEdge(ne)
+	} else {
+		w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-weightDelta))
+	}
 }
 
 // TestUpdate is a debug intermediar to make sure access pointers are defined correctly
