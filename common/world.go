@@ -106,8 +106,10 @@ func (w World) EdgeWeightPropagation(start graph.Node, steps, depth int) {
 	if steps > depth {
 		nodes := w.grid.From(start.ID())
 		for _, n := range nodes {
-			w.UpdateWeight(w.grid.WeightedEdgeBetween(start.ID(), n.ID()), float64(1.0/float64(depth*depth)))
-			w.EdgeWeightPropagation(n, steps, depth+1)
+			go func() {
+				w.UpdateWeight(w.grid.WeightedEdgeBetween(start.ID(), n.ID()), float64(1.0/float64(depth*depth)))
+				w.EdgeWeightPropagation(n, steps, depth+1)
+			}()
 		}
 
 	}
@@ -122,12 +124,9 @@ func GraphReWeightByRadiation(world *World, trace Trace) {
 
 // UpdateWeight is a short hand for update edge weight
 func (w World) UpdateWeight(e graph.WeightedEdge, weightDelta float64) {
-	if w.Concurrency {
-		ne := w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-weightDelta)
-		w.grid.ConcurrentSetWeightedEdge(ne)
-	} else {
-		w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-weightDelta))
-	}
+
+	w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-weightDelta))
+
 }
 
 // TestUpdate is a debug intermediar to make sure access pointers are defined correctly

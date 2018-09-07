@@ -13,7 +13,7 @@ func TestConcurrentWeightUpdate(t *testing.T) {
 			g.rwLock.Lock()
 			ne := g.NewWeightedEdge(simple.Node(1), simple.Node(2), 0.25)
 			g.rwLock.Unlock()
-			g.ConcurrentSetWeightedEdge(ne)
+			g.SetWeightedEdge(ne)
 		}()
 	}
 

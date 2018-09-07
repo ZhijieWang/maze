@@ -13,8 +13,8 @@ type ConcurrentWeightedUndirectedGraph struct {
 	rwLock *sync.RWMutex
 }
 
-// ConcurrentSetWeightedEdge mimics the original implementation with mutex
-func (g *ConcurrentWeightedUndirectedGraph) ConcurrentSetWeightedEdge(e graph.WeightedEdge) {
+// SetWeightedEdge mimics the original implementation with mutex
+func (g *ConcurrentWeightedUndirectedGraph) SetWeightedEdge(e graph.WeightedEdge) {
 	g.rwLock.Lock()
 	g.WeightedUndirectedGraph.SetWeightedEdge(e)
 	g.rwLock.Unlock()
@@ -34,4 +34,11 @@ func (g *ConcurrentWeightedUndirectedGraph) WeightedEdgeBetween(xid, yid int64) 
 	g.rwLock.Lock()
 	defer g.rwLock.Unlock()
 	return g.WeightedUndirectedGraph.WeightedEdgeBetween(xid, yid)
+}
+
+// NewWeightedEdge returns a new weighted edge from the source to the destination node.
+func (g *ConcurrentWeightedUndirectedGraph) NewWeightedEdge(from, to graph.Node, weight float64) graph.WeightedEdge {
+	g.rwLock.Lock()
+	defer g.rwLock.Unlock()
+	return g.WeightedUndirectedGraph.NewWeightedEdge(from, to, weight)
 }
