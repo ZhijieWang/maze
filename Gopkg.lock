@@ -8,6 +8,12 @@
   version = "v1.4.7"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "d460ce9f8df2e77fb1ba55ca87fafed96c607494"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/hashicorp/hcl"
   packages = [
     ".",
@@ -113,6 +119,30 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  name = "gonum.org/v1/gonum"
+  packages = [
+    "blas",
+    "blas/blas64",
+    "blas/gonum",
+    "floats",
+    "graph",
+    "graph/internal/ordered",
+    "graph/internal/set",
+    "graph/internal/uid",
+    "graph/simple",
+    "internal/asm/c128",
+    "internal/asm/f32",
+    "internal/asm/f64",
+    "internal/math32",
+    "lapack",
+    "lapack/gonum",
+    "lapack/lapack64",
+    "mat"
+  ]
+  revision = "a809dafcb141e2414a6cf04a680ff84e72d45c69"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -121,6 +151,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3cf6c2e699e8de070762e94429c597f88b1bc2e809642870f44c3e29039dbe8b"
+  inputs-digest = "861eda0ecaf5706061da81fd78322667e1b1f86bf993ca8a56ee7fc0c8260f26"
   solver-name = "gps-cdcl"
   solver-version = 1

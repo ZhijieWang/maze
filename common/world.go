@@ -4,11 +4,24 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-
+	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
+	"log"
+	"os"
 )
+func init(){
+    log.SetPrefix("LOG: ")
+    log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
+    log.Println("init started")
+simID, err:=uuid.NewUUID()
+	if (err!=nil){
+		log.Fatal(err)
+	}
+    outfile, _ := os.Create(simID.String()+".log") // update path for your needs
+    log.SetOutput(outfile)
 
+}
 //	1	- 	5	-	9
 //	|	X	|		|
 //	2	-	6		10
@@ -18,8 +31,8 @@ import (
 //	4	- 	8 	-	12
 
 //CreateWorld generates a network of 12 nodes
-func CreateWorld(numRobots int, concurrent bool) *World {
-	w := &World{}
+func CreateWorld(numRobots int, concurrent bool) World {
+	w := &TransparentWorld{}
 	w.Concurrency = concurrent
 
 	g := simple.NewWeightedUndirectedGraph(1, 10000000)
@@ -44,8 +57,14 @@ func CreateWorld(numRobots int, concurrent bool) *World {
 	g.SetWeightedEdge(g.NewWeightedEdge(simple.Node(12), simple.Node(8), 1))
 	//randomly assign x robots to positions
 	r := rand.New(rand.NewSource(time.Now().Unix()))
+
 	for i := 0; i < numRobots; i++ {
-		w.robots = append(w.robots, Robot{location: g.Nodes()[r.Intn(len(g.Nodes()))]})
+		rID, err:= uuid.NewUUID()
+	if (err!= nil){
+		log.Fatal(err)
+	}
+
+		w.robots = append(w.robots, Robot{id: rID,location: g.Nodes()[r.Intn(len(g.Nodes()))]})
 	}
 	w.grid = g
 	w.timestamp = 0
@@ -54,11 +73,24 @@ func CreateWorld(numRobots int, concurrent bool) *World {
 
 // Robot is a data holder struct for robot
 type Robot struct {
+	id uuid.UUID
 	location graph.Node
 }
+// ID returns the robot UUID
+func (r *Robot)ID() uuid.UUID{
+	return r.id
+}
 
-// World is a data holder for simulation
-type World struct {
+// World interface defines the behavior of World simulation
+type World interface {
+	Simulate(policy func(w World, robot Robot, t int) Trace, graphUpdate func(world World, trace Trace))
+	GetGraph() *simple.WeightedUndirectedGraph
+	GetRobots() []Robot
+	EdgeWeightPropagation(start graph.Node, step, depth int)
+}
+
+// TransparentWorld is a data holder for simulation, robot have full visibility of the world and themselves
+type TransparentWorld struct {
 	timestamp   int
 	robots      []Robot
 	grid        *simple.WeightedUndirectedGraph
@@ -67,17 +99,24 @@ type World struct {
 
 // Trace is data structure to hold data that can be used for path planning
 type Trace struct {
+	RobotID  uuid.UUID
 	Source    graph.Node
 	Target    graph.Node
 	Timestamp int
 }
 
-//RandMove is a basic function, robot takes a random move that it can move to.
+//GetGraph returns the underlying graph
+func (w TransparentWorld) GetGraph() *simple.WeightedUndirectedGraph {
+	return w.grid
+}
+
+// RandMove is a basic function, robot takes a random move that it can move to.
 // if there is onlyone path, robot will move
 // this is stateless, regardless of previous move taken
 func RandMove(w World, r Robot, t int) Trace {
-	locs := w.grid.From(r.location.ID())
+	locs := w.GetGraph().From(r.location.ID())
 	trace := Trace{
+		RobotID:	r.ID(),
 		Source:    r.location,
 		Target:    locs[rand.Intn(len(locs))],
 		Timestamp: t,
@@ -86,28 +125,28 @@ func RandMove(w World, r Robot, t int) Trace {
 	return trace
 }
 
+// GetRobots returns a list of robot from underlying storage
+func (w TransparentWorld) GetRobots() []Robot {
+	return w.robots
+}
+
 // Simulate is a step function for time synchronized simulation
-func (w World) Simulate(policy func(w World, robot Robot, t int) Trace, graphUpdate func(world *World, trace Trace)) {
+func (w TransparentWorld) Simulate(policy func(w World, robot Robot, t int) Trace, graphUpdate func(world World, trace Trace)) {
 	w.timestamp++
 	for _, r := range w.robots {
-
 		t := policy(w, r, w.timestamp)
+		log.Printf("%+v\n", t)
 		graphUpdate(&w, t)
-
 	}
-	//	for _, edge := range w.grid.WeightedEdges() {
-	//		fmt.Printf("%s %s %f\n", edge.From(), edge.To(), edge.Weight())
-	//	}
-
 }
 
 // EdgeWeightPropagation is the edge weight update function
-func (w World) EdgeWeightPropagation(start graph.Node, steps, depth int) {
+func (w TransparentWorld) EdgeWeightPropagation(start graph.Node, steps, depth int) {
 	if steps > depth {
 		nodes := w.grid.From(start.ID())
 		for _, n := range nodes {
-
-			w.UpdateWeight(w.grid.WeightedEdgeBetween(start.ID(), n.ID()), float64(1.0/float64(depth*depth)))
+			e := w.grid.WeightedEdgeBetween(start.ID(), n.ID())
+			w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-float64(1.0/float64(depth*depth))))
 			w.EdgeWeightPropagation(n, steps, depth+1)
 
 		}
@@ -116,26 +155,13 @@ func (w World) EdgeWeightPropagation(start graph.Node, steps, depth int) {
 }
 
 // GraphReWeightByRadiation is a graph weight propagation method to recalculate graph edge weight by radiation
-func GraphReWeightByRadiation(world *World, trace Trace) {
-	for _, i := range world.robots {
+func GraphReWeightByRadiation(world World, trace Trace) {
+	for _, i := range world.GetRobots() {
 		world.EdgeWeightPropagation(i.location, 3, 1)
 	}
 }
 
-// UpdateWeight is a short hand for update edge weight
-func (w World) UpdateWeight(e graph.WeightedEdge, weightDelta float64) {
-
-	w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-weightDelta))
-
-}
-
-// TestUpdate is a debug intermediar to make sure access pointers are defined correctly
-func (w World) TestUpdate(x int64, y int64) {
-	w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(w.grid.Node(x), w.grid.Node(y), 100))
-	fmt.Println(w.grid)
-}
-
-// Print is a printing utility
-func (w World) Print() {
+// Print is a printing utilito
+func (w TransparentWorld) Print() {
 	fmt.Println(w.grid)
 }

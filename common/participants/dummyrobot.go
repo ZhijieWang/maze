@@ -1,11 +1,16 @@
+package participants
+
+// DummyBot serves as a reference implementation for robot type participants
 type DummyBot struct {
 	observationChannel
 }
 
-func (b DummyBot) announce() {
+// Announce borad cast its location, movement and observations to others via pre-defined channels.
+func (b DummyBot) Announce() {
 
 }
 
-func (b DummyBot) observe() {
+// Observe takes information and other observations from pre-defined channels
+func (b DummyBot) Observe() {
 
 }

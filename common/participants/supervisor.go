@@ -1,3 +1,5 @@
+package participants
+
 import (
 	"gonum.org/v1/gonum/graph"
 	"log"

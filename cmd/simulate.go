@@ -16,9 +16,9 @@ package cmd
 
 import (
 	"fmt"
-	"time"
 	"github.com/spf13/cobra"
 	"github.com/zhijiewang/maze/common"
+	"time"
 )
 
 // simulateCmd represents the simulate command
@@ -34,20 +34,26 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("simulate called")
 		start := time.Now()
-		g := common.CreateWorld(3,Concurrency )
-		for i:= 0; i < Iterations; i++{ 
-		g.Simulate(common.RandMove, common.GraphReWeightByRadiation)
-	}
-	elapsed := time.Since(start)
-	fmt.Printf("Simulation took %s wtih Concurrency=%d\v", elapsed, Concurrency) 
+		g := common.CreateWorld(NumRobots, Concurrency)
+		for i := 0; i < Iterations; i++ {
+			g.Simulate(common.RandMove, common.GraphReWeightByRadiation)
+		}
+		elapsed := time.Since(start)
+		fmt.Printf("Simulation took %s for %v iterations \n", elapsed, Iterations)
 	},
 }
+
 // Concurrency is the flag for marking execution mode
 var Concurrency bool
+
 // Iterations is the flag for how many iterations to run
 var Iterations int
+// NumRobots is the flag for how many robots to assign on the network
+var NumRobots int
+
 func init() {
 	rootCmd.AddCommand(simulateCmd)
 	simulateCmd.Flags().BoolVarP(&Concurrency, "concurrency", "c", false, "Setting for running the simulation in concurrent mode, which consumes more system resouces for speed up)")
 	simulateCmd.Flags().IntVar(&Iterations, "i", 100, "Setting for number of iterations in the simulation")
+	simulateCmd.Flags().IntVar(&NumRobots, "n", 3, "Setting for number of robots to spawn on the ground")
 }
