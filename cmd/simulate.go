@@ -48,6 +48,7 @@ var Concurrency bool
 
 // Iterations is the flag for how many iterations to run
 var Iterations int
+
 // NumRobots is the flag for how many robots to assign on the network
 var NumRobots int
 

@@ -1,27 +1,43 @@
+// Copyright © 2018 Zhijie (Bill) Wang <wangzhijiebill@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package common
 
 import (
 	"fmt"
-	"math/rand"
-	"time"
 	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 )
-func init(){
-    log.SetPrefix("LOG: ")
-    log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
-    log.Println("init started")
-simID, err:=uuid.NewUUID()
-	if (err!=nil){
+
+func init() {
+	log.SetPrefix("LOG: ")
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
+	log.Println("init started")
+	simID, err := uuid.NewUUID()
+	if err != nil {
 		log.Fatal(err)
 	}
-    outfile, _ := os.Create(simID.String()+".log") // update path for your needs
-    log.SetOutput(outfile)
+	outfile, _ := os.Create(simID.String() + ".log") // update path for your needs
+	log.SetOutput(outfile)
 
 }
+
 //	1	- 	5	-	9
 //	|	X	|		|
 //	2	-	6		10
@@ -59,12 +75,12 @@ func CreateWorld(numRobots int, concurrent bool) World {
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 
 	for i := 0; i < numRobots; i++ {
-		rID, err:= uuid.NewUUID()
-	if (err!= nil){
-		log.Fatal(err)
-	}
+		rID, err := uuid.NewUUID()
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		w.robots = append(w.robots, Robot{id: rID,location: g.Nodes()[r.Intn(len(g.Nodes()))]})
+		w.robots = append(w.robots, Robot{id: rID, location: g.Nodes()[r.Intn(len(g.Nodes()))]})
 	}
 	w.grid = g
 	w.timestamp = 0
@@ -73,11 +89,12 @@ func CreateWorld(numRobots int, concurrent bool) World {
 
 // Robot is a data holder struct for robot
 type Robot struct {
-	id uuid.UUID
+	id       uuid.UUID
 	location graph.Node
 }
+
 // ID returns the robot UUID
-func (r *Robot)ID() uuid.UUID{
+func (r *Robot) ID() uuid.UUID {
 	return r.id
 }
 
@@ -99,7 +116,7 @@ type TransparentWorld struct {
 
 // Trace is data structure to hold data that can be used for path planning
 type Trace struct {
-	RobotID  uuid.UUID
+	RobotID   uuid.UUID
 	Source    graph.Node
 	Target    graph.Node
 	Timestamp int
@@ -116,7 +133,7 @@ func (w TransparentWorld) GetGraph() *simple.WeightedUndirectedGraph {
 func RandMove(w World, r Robot, t int) Trace {
 	locs := w.GetGraph().From(r.location.ID())
 	trace := Trace{
-		RobotID:	r.ID(),
+		RobotID:   r.ID(),
 		Source:    r.location,
 		Target:    locs[rand.Intn(len(locs))],
 		Timestamp: t,
@@ -131,12 +148,12 @@ func (w TransparentWorld) GetRobots() []Robot {
 }
 
 // Simulate is a step function for time synchronized simulation
-func (w TransparentWorld) Simulate(policy func(w World, robot Robot, t int) Trace, graphUpdate func(world World, trace Trace)) {
+func (w *TransparentWorld) Simulate(policy func(w World, robot Robot, t int) Trace, graphUpdate func(world World, trace Trace)) {
 	w.timestamp++
 	for _, r := range w.robots {
 		t := policy(w, r, w.timestamp)
 		log.Printf("%+v\n", t)
-		graphUpdate(&w, t)
+		graphUpdate(w, t)
 	}
 }
 
@@ -164,4 +181,25 @@ func GraphReWeightByRadiation(world World, trace Trace) {
 // Print is a printing utilito
 func (w TransparentWorld) Print() {
 	fmt.Println(w.grid)
+}
+
+// Task defines the data structure holding the task information
+type Task struct {
+	Origin      graph.Node
+	Destination graph.Node
+}
+
+// TaskGenerator is the generator function for randomly producing tasks
+func TaskGenerator(maxTasks int, w World) []Task {
+	n := len(w.GetGraph().Nodes())
+	tList := []Task{}
+	for i := 0; i < maxTasks; i++ {
+		if rand.Intn(2) > 0 {
+			tList = append(tList, Task{
+				Origin:      w.GetGraph().Nodes()[rand.Intn(n)],
+				Destination: w.GetGraph().Nodes()[rand.Intn(n)],
+			})
+		}
+	}
+	return tList
 }
