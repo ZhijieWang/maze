@@ -101,6 +101,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/exp"
+  packages = ["rand"]
+  revision = "e88728d35e99800368f4acc0969018db6b0d3dd5"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "2b024373dcd9800f0cae693839fac6ede8d64a8c"
@@ -127,10 +133,13 @@
     "blas/gonum",
     "floats",
     "graph",
+    "graph/internal/linear",
     "graph/internal/ordered",
     "graph/internal/set",
     "graph/internal/uid",
+    "graph/path",
     "graph/simple",
+    "graph/traverse",
     "internal/asm/c128",
     "internal/asm/f32",
     "internal/asm/f64",
@@ -151,6 +160,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "861eda0ecaf5706061da81fd78322667e1b1f86bf993ca8a56ee7fc0c8260f26"
+  inputs-digest = "c05c3f71750f82e0dfd4644a052273826aad0a2d77d0f00f19efe2a1726392e5"
   solver-name = "gps-cdcl"
   solver-version = 1

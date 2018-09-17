@@ -36,7 +36,7 @@ to quickly create a Cobra application.`,
 		start := time.Now()
 		g := common.CreateWorld(NumRobots, Concurrency)
 		for i := 0; i < Iterations; i++ {
-			g.Simulate(common.RandMove, common.GraphReWeightByRadiation)
+			g.Simulate(common.TaskMove, common.GraphReWeightByRadiation, common.TaskGenerator)
 		}
 		elapsed := time.Since(start)
 		fmt.Printf("Simulation took %s for %v iterations \n", elapsed, Iterations)

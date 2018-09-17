@@ -3,12 +3,11 @@ package common
 import (
 	"testing"
 )
-
-func TestConcurrentWorldSimulation(t *testing.T) {
-	w := CreateWorld(2, true)
-	for i := 0; i < 10000; i++ {
-		go func() {
-			w.UpdateWeight(w.grid.WeightedEdgeBetween(1, 2), 0.5)
-		}()
+func TestCanModifyRobot(t *testing.T){
+	g:=CreateWorld(3, false)
+	r := g.GetRobots()
+	r[0].location=r[1].location
+	if r[0].location != g.GetRobots()[0].location{
+		t.Errorf("Expect the robots returned to be modifiable\n")
 	}
 }
