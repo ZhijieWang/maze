@@ -1,10 +1,12 @@
 package participants
 
 import (
-	"gonum.org/v1/gonum/graph"
+	"fmt"
 	"log"
 	"net"
 	"net/rpc"
+
+	"gonum.org/v1/gonum/graph"
 )
 
 func init() {
