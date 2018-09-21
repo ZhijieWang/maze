@@ -33,6 +33,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	outfile, _ := os.Create(simID.String() + ".log") // update path for your needs
 	log.SetOutput(outfile)
 

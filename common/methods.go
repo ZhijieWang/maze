@@ -6,18 +6,19 @@ import (
 	"math/rand"
 
 	"github.com/google/uuid"
+	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
 )
 
 // TaskGenerator is the generator function for randomly producing tasks
-func TaskGenerator(maxTasks int, w World) []*Task {
+func TaskGenerator(maxTasks int, w World) []Task {
 	n := len(w.GetGraph().Nodes())
-	tList := []*Task{}
+	tList := []Task{}
 	for i := 0; i < maxTasks; i++ {
 		if rand.Intn(2) > 0 {
 			uid, _ := uuid.NewUUID()
-			tList = append(tList, &Task{
-				id:          uid,
+			tList = append(tList, TimePriorityTask{
+				ID:          uid,
 				Origin:      w.GetGraph().Nodes()[rand.Intn(n)],
 				Destination: w.GetGraph().Nodes()[rand.Intn(n)],
 			})
@@ -54,7 +55,7 @@ func TaskMove(w World, r *Robot, t int) Trace {
 	if r.task != nil {
 		log.Printf("Robot %s is carrying out Task %+v\n", r.id, r.task)
 		fmt.Printf("%+v\n", r.path)
-		fmt.Printf("current location %s, task target location %s\n", r.location, r.task.Destination)
+		fmt.Printf("current location %s, task target location %s\n", r.location, r.task.GetDestination())
 		trace := Trace{
 			RobotID:   r.ID(),
 			Source:    r.location,
@@ -79,13 +80,40 @@ func TaskMove(w World, r *Robot, t int) Trace {
 	tMin := tasks[rand.Intn(len(tasks))]
 
 	pt, _ := path.BellmanFordFrom(r.location, w.GetGraph())
-	p, _ := pt.To(tMin.Origin.ID())
+	p, _ := pt.To((*tMin).GetOrigination().ID())
 	r.path = p[1:]
-	r.task = tMin
+	r.task = *tMin
 	return Trace{
 		RobotID:   r.ID(),
 		Source:    r.location,
 		Target:    p[0],
 		Timestamp: t,
 	}
+}
+
+// SelectTaskByDistance returns a task from queue, and returns that task. If there is an error, return err
+func SelectTaskByDistance(tm PassiveTaskManager, robot Robot, world World) (PriorityTask, []graph.Node, error) {
+	tq := tm.GetTasks()
+	log.Printf("There are %v tasks currently in Queue\n", len(tq))
+	if len(tq) == 0 {
+		log.Println("No Tasks")
+		return nil, nil, nil
+	}
+	//claiming task
+	var tMin PriorityTask
+	minWeight := 0.0
+	var weight float64
+	var p, pMin []graph.Node
+	pt, _ := path.BellmanFordFrom(robot.location, world.GetGraph())
+	for _, t := range tq {
+		p, weight = pt.To(t.GetOrigination().ID())
+
+		if weight < minWeight {
+			minWeight = weight
+			tMin = t
+			pMin = p
+		}
+	}
+	err := tm.ClaimTask(tMin, robot.ID())
+	return tMin, pMin, err
 }

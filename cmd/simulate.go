@@ -44,7 +44,6 @@ to quickly create a Cobra application.`,
 	},
 }
 
-
 // Iterations is the flag for how many iterations to run
 var Iterations int
 
