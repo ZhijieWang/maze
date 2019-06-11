@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -49,7 +48,7 @@ func init() {
 
 //CreateWorld generates a network of 12 nodes
 func CreateWorld(numRobots int) World {
-	w := &TransparentWorld{}
+	w := NewSimpleWorld()
 	var g *simple.WeightedUndirectedGraph
 	g = simple.NewWeightedUndirectedGraph(1, 10000000)
 	for i := 1; i < 13; i++ {
@@ -89,64 +88,33 @@ func CreateWorld(numRobots int) World {
 
 // World interface defines the behavior of World simulation
 type World interface {
-	Simulate(policy func(w World, robot *Robot, t int) Trace, graphUpdate func(world World, trace Trace), tGenerator func(maxT int, w World) []*Task)
 	GetGraph() *simple.WeightedUndirectedGraph
 	GetRobots() []*Robot
-	EdgeWeightPropagation(start graph.Node, step, depth int)
-	GetTasks() []*Task
-	SetTasks(tasks []*Task)
+	//EdgeWeightPropagation(start graph.Node, step, depth int)
+	GetTasks() []Task
+	SetTasks(tasks []Task)
+	ClaimTask(tid TaskID, rid RobotID)
 }
 
-// TransparentWorld is a data holder for simulation, robot have full visibility of the world and themselves
-type TransparentWorld struct {
-	timestamp int
-	robots    []*Robot
-	grid      *simple.WeightedUndirectedGraph
-	Tasks     []*Task
+// SimpleWorld is the base implementation of a fully visible world, backed with Gonum Simple Graph
+type SimpleWorld struct {
+	robots []*Robot
+	tasks  []Task
+	grid   *simple.WeightedUndirectedGraph
 }
 
-//SetTasks add tasks to the queue
-func (w *TransparentWorld) SetTasks(tasks []*Task) {
-	w.Tasks = append(w.Tasks, tasks...)
+// SetTasks allows the new tasks to be added to the world
+func (s *SimpleWorld) SetTasks(tasks []*Task) bool {
+	s.Tasks = append(w.Tasks, tasks...)
+	return true
 }
 
-//GetTasks return current task queue
-func (w *TransparentWorld) GetTasks() []*Task {
-	return w.Tasks
+// GetTasks allows the rerieval of tasks (available only)
+func (s *SimpleWorld) GetTasks() []Task {
+	return tasks
 }
 
-//GetGraph returns the underlying graph
-func (w TransparentWorld) GetGraph() *simple.WeightedUndirectedGraph {
-	return w.grid
-}
-
-// GetRobots returns a list of robot from underlying storage
-func (w TransparentWorld) GetRobots() []*Robot {
-	return w.robots
-}
-
-// Simulate is a step function for time synchronized simulation
-func (w *TransparentWorld) Simulate(policy func(w World, robot *Robot, t int) Trace, graphUpdate func(world World, trace Trace), tGenerator func(maxT int, w World) []*Task) {
-	w.timestamp++
-	//	log.Printf("%d Tasks in current world \n", len(w.GetTasks()))
-	w.SetTasks(tGenerator(50, w))
-
-	for _, r := range w.robots {
-		t := policy(w, r, w.timestamp)
-		log.Printf("%+v\n", t)
-		graphUpdate(w, t)
-	}
-}
-
-// EdgeWeightPropagation is the edge weight update function
-func (w TransparentWorld) EdgeWeightPropagation(start graph.Node, steps, depth int) {
-	if steps > depth {
-		nodes := w.grid.From(start.ID())
-		for _, n := range nodes {
-			e := w.grid.WeightedEdgeBetween(start.ID(), n.ID())
-			w.grid.SetWeightedEdge(w.grid.NewWeightedEdge(e.From(), e.To(), e.Weight()-float64(1.0/float64(depth*depth))))
-			w.EdgeWeightPropagation(n, steps, depth+1)
-		}
-
-	}
+// GetGraph allows the retrieval of world state. The current implementation returns the full world. This is where visibility can be implemented
+func (s *SimpleWorld) GetgGraph() *simple.WeightedUndirectedGraph {
+	return grid
 }
