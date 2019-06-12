@@ -120,8 +120,17 @@ func (s SimpleWorld) GetGraph() *simple.WeightedUndirectedGraph {
 func NewSimpleWorld() SimpleWorld {
 	return SimpleWorld{}
 }
+
+// ClaimTasks defines the mechanims that a Robot can claim a given task from the world
 func (s SimpleWorld) ClaimTask(tid TaskID, rid RobotID) {
 }
+
+// GetRobots implemnts the fucntionality for retrieval of list of robots
 func (s SimpleWorld) GetRobots() []*Robot {
 	return s.robots
+}
+
+func (s SimpleWorld) AddRobots(robots []Robot) bool {
+	s.robots = append(s.robots, robots...)
+	return true
 }

@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zhijiewang/maze/common"
+	"maze/common"
 )
 
 // simulateCmd represents the simulate command

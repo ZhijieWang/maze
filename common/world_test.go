@@ -15,14 +15,27 @@ package common_test
 
 import (
 	"testing"
+
+	"maze/common"
 )
 
 func TestCanMakeWorld(t *testing.T) {
+	g := common.NewSimpleWorld()
+	common.
+	if len(g.GetRobots()) != 0 {
+		t.Errorf("Expected Empty Start, there should be no robots")
+	}
+	if len(g.GetTasks()) != 0 {
+		t.Errorf("Expected Empty Start, there should be no tasks")
+	}
+	
 }
 
 func TestCanModifyRobot(t *testing.T) {
-	//	g := common.NewSimpleWorld()
-	//	r := g.GetRobots()
+	g := common.NewSimpleWorld()
+	if (g.AddRobot
+	r := g.GetRobots()
+
 	//r[0].location = r[1].location
 	//if r[0].location != g.GetRobots()[0].location {
 	//	t.Errorf("Expect the robots returned to be modifiable\n")
@@ -31,7 +44,6 @@ func TestCanModifyRobot(t *testing.T) {
 
 //func TestCanModifyTasks(t *testing.T) {
 //	g := CreateWorld(3)
-
 //	task := make([]Task, 1)
 //	task = append(task, TimePriorityTask{})
 //	g.SetTasks(task)
