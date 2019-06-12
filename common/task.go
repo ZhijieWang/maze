@@ -52,11 +52,11 @@ type Task interface {
 
 // TimePriorityTask defines the priority of tasks via its OriginationTime
 type TimePriorityTask struct {
-	ID              TaskID
-	Origin          graph.Node
-	Destination     graph.Node
-	Status          TaskStatus
-	Carrier         RobotID
+	ID          TaskID
+	Origin      graph.Node
+	Destination graph.Node
+	Status      TaskStatus
+	//Carrier         RobotID
 	OriginationTime time.Time
 	CompletionTime  time.Time
 }
@@ -109,7 +109,7 @@ type TaskManager interface {
 // PassiveTaskManager extends the TaskManager interface and allows robots to claim tasks
 type PassiveTaskManager interface {
 	TaskManager
-	ClaimTask(Task, RobotID) error
+	//	ClaimTask(Task, RobotID) error
 }
 
 //BasicTaskManager implements a PassiveTaskManager interface, with procedure generation of tasks,
@@ -129,11 +129,12 @@ func (tm BasicTaskManager) GetTasks() []PriorityTask {
 }
 
 //ClaimTasks method implements necessary functions defined in PassiveTask managers. The method returns nil when operation was sucessful, else err.
-func (tm BasicTaskManager) ClaimTasks(TaskID, RobotID) error {
-	tm.taskListRWLock.Lock()
-	defer tm.taskListRWLock.Unlock()
-	return nil
-}
+
+//func (tm BasicTaskManager) ClaimTasks(TaskID, RobotID) error {
+//	tm.taskListRWLock.Lock()
+//	defer tm.taskListRWLock.Unlock()
+//	return nil
+//}
 
 // TaskUpdate updates the status of the task, referred by taskID
 func (tm BasicTaskManager) TaskUpdate(taskID TaskID, status TaskStatus) error {

@@ -16,9 +16,7 @@ package common
 
 import (
 	"log"
-	"math/rand"
 	"os"
-	"time"
 
 	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph/simple"
@@ -71,18 +69,18 @@ func CreateWorld(numRobots int) World {
 	g.SetWeightedEdge(g.NewWeightedEdge(simple.Node(11), simple.Node(12), 1))
 	g.SetWeightedEdge(g.NewWeightedEdge(simple.Node(12), simple.Node(8), 1))
 	//randomly assign x robots to positions
-	r := rand.New(rand.NewSource(time.Now().Unix()))
+	//r := rand.New(rand.NewSource(time.Now().Unix()))
 
 	for i := 0; i < numRobots; i++ {
-		rID, err := uuid.NewUUID()
-		if err != nil {
-			log.Fatal(err)
-		}
+		//rID, err := uuid.NewUUID()
+		//	if err != nil {
+		//		log.Fatal(err)
+		//	}
 
-		w.robots = append(w.robots, &Robot{id: rID, location: g.Nodes()[r.Intn(len(g.Nodes()))]})
+		//		w.robots = append(w.robots, &Robot{id: rID, location: g.Nodes()[r.Intn(len(g.Nodes()))]})
 	}
 	w.grid = g
-	w.timestamp = 0
+	//w.timestamp = 0
 	return w
 }
 
@@ -92,7 +90,7 @@ type World interface {
 	GetRobots() []*Robot
 	//EdgeWeightPropagation(start graph.Node, step, depth int)
 	GetTasks() []Task
-	SetTasks(tasks []Task)
+	SetTasks(tasks []Task) bool
 	ClaimTask(tid TaskID, rid RobotID)
 }
 
@@ -104,17 +102,26 @@ type SimpleWorld struct {
 }
 
 // SetTasks allows the new tasks to be added to the world
-func (s *SimpleWorld) SetTasks(tasks []*Task) bool {
-	s.Tasks = append(w.Tasks, tasks...)
+func (s SimpleWorld) SetTasks(tasks []Task) bool {
+	s.tasks = append(s.tasks, tasks...)
 	return true
 }
 
 // GetTasks allows the rerieval of tasks (available only)
-func (s *SimpleWorld) GetTasks() []Task {
-	return tasks
+func (s SimpleWorld) GetTasks() []Task {
+	return s.tasks
 }
 
 // GetGraph allows the retrieval of world state. The current implementation returns the full world. This is where visibility can be implemented
-func (s *SimpleWorld) GetgGraph() *simple.WeightedUndirectedGraph {
-	return grid
+func (s SimpleWorld) GetGraph() *simple.WeightedUndirectedGraph {
+	return s.grid
+}
+
+func NewSimpleWorld() SimpleWorld {
+	return SimpleWorld{}
+}
+func (s SimpleWorld) ClaimTask(tid TaskID, rid RobotID) {
+}
+func (s SimpleWorld) GetRobots() []*Robot {
+	return s.robots
 }

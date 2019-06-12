@@ -15,9 +15,10 @@
 package main
 
 import (
-	"github.com/zhijiewang/maze/cmd"
+	"github.com/zhijiewang/maze/common"
 )
 
 func main() {
-	cmd.Execute()
+	common.CreateWorld()
+
 }
