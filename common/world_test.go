@@ -14,43 +14,40 @@
 package common_test
 
 import (
-	"testing"
-
 	"maze/common"
+	"testing"
 )
 
 func TestCanMakeWorld(t *testing.T) {
 	g := common.NewSimpleWorld()
-	common.
 	if len(g.GetRobots()) != 0 {
 		t.Errorf("Expected Empty Start, there should be no robots")
 	}
 	if len(g.GetTasks()) != 0 {
 		t.Errorf("Expected Empty Start, there should be no tasks")
 	}
-	
+
 }
 
-func TestCanModifyRobot(t *testing.T) {
+func TestCanAssignRobot(t *testing.T) {
 	g := common.NewSimpleWorld()
-	if (g.AddRobot
+	var robots [5]common.Robot = [5]common.Robot{common.Robot{}}
+	g.AddRobots(robots[:])
 	r := g.GetRobots()
-
-	//r[0].location = r[1].location
-	//if r[0].location != g.GetRobots()[0].location {
-	//	t.Errorf("Expect the robots returned to be modifiable\n")
-	//}
+	if len(r) != 5 {
+		t.Errorf("We have a problem. Expected length 5, actual length %d", len(r))
+	}
 }
 
-//func TestCanModifyTasks(t *testing.T) {
-//	g := CreateWorld(3)
-//	task := make([]Task, 1)
-//	task = append(task, TimePriorityTask{})
-//	g.SetTasks(task)
-//	if len(g.GetTasks()) == 0 {
-//		t.Errorf("Expect the task list to be mutable\n")
-//	}
-//	if g.GetTasks()[0] != task[0] {
-//		t.Errorf("Expect the Task setter methog to work, but failed")
-//	}
-//}
+func TestCanModifyTasks(t *testing.T) {
+	g := common.NewSimpleWorld()
+	task := make([]common.Task, 1)
+	task = append(task, common.TimePriorityTask{})
+	g.SetTasks(task)
+	if len(g.GetTasks()) == 0 {
+		t.Errorf("Expect the task list to be mutable\n")
+	}
+	if g.GetTasks()[0] != task[0] {
+		t.Errorf("Expect the Task setter methog to work, but failed")
+	}
+}
