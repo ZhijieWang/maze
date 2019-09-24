@@ -50,8 +50,7 @@ type Task interface {
 
 //TaskManager defines task manager interfaces. All task generator, coordinator must follow this type
 type TaskManager interface {
-	Run()
-	GetBoradcastInfo() interface{}
+	GetBroadcastInfo() interface{}
 	GetAllTasks() []Task
 	GetNext() Task
 	GetTasks(n int) []Task

@@ -14,7 +14,7 @@ type BasicTaskManager struct {
 }
 
 // GetTasks implements the GetTasks method from TaskManager Interface
-func (tm BasicTaskManager) GetTasks() []Task {
+func (tm *BasicTaskManager) GetTasks(i int) []Task {
 	tm.taskListRWLock.RLock()
 	defer tm.taskListRWLock.RUnlock()
 	return tm.taskList
@@ -29,7 +29,7 @@ func (tm BasicTaskManager) GetTasks() []Task {
 //}
 
 // TaskUpdate updates the status of the task, referred by taskID
-func (tm BasicTaskManager) TaskUpdate(taskID TaskID, status TaskStatus) error {
+func (tm *BasicTaskManager) TaskUpdate(taskID TaskID, status TaskStatus) error {
 
 	t, err := tm.GetByID(taskID)
 	if err != nil {
@@ -39,24 +39,24 @@ func (tm BasicTaskManager) TaskUpdate(taskID TaskID, status TaskStatus) error {
 	return nil
 }
 
-func NewBasicTaskManager() BasicTaskManager {
+func NewBasicTaskManager() *BasicTaskManager {
 
 	tm := BasicTaskManager{}
-	//tm.taskList = make([]Task, 5)
-	return tm
+	tm.taskMap = make(map[TaskID]Task)
+	return &tm
 }
 
 // GetByID finds the task in Queue by ID
-func (tM BasicTaskManager) GetByID(taskID TaskID) (Task, error) {
+func (tM *BasicTaskManager) GetByID(taskID TaskID) (Task, error) {
 	return tM.taskMap[taskID], nil
 
 }
 
 //Len returns the current length of the queue
-func (tM BasicTaskManager) Len() int { return len(tM.taskList) }
+func (tM *BasicTaskManager) Len() int { return len(tM.taskList) }
 
 // Less is defined by comparing Task's Priority Function to give us the lowest based on priority
-func (tM BasicTaskManager) Less(i, j int) bool {
+func (tM *BasicTaskManager) Less(i, j int) bool {
 	return i < j
 }
 
@@ -78,8 +78,34 @@ func (tM *BasicTaskManager) Push(x Task) {
 
 //Swap will swap elements and reblance the Task Queue
 
-func (tM BasicTaskManager) Swap(i, j int) {
+func (tM *BasicTaskManager) Swap(i, j int) {
 	tM.taskList[i], tM.taskList[j] = tM.taskList[j], tM.taskList[i]
 }
 
-// NewTaskManager is the constructor method for TaskManager to initialize necessary values.
+// AddTask insert task into the tasks manager
+func (tM *BasicTaskManager) AddTask(t Task) bool {
+	tM.Push(t)
+	return true
+}
+
+// AddTasks insert tasks into the task manager
+func (tm *BasicTaskManager) AddTasks(t []Task) bool {
+	return true
+}
+
+// GetAllTasks
+
+func (tm *BasicTaskManager) GetAllTasks() []Task {
+	return tm.taskList
+}
+
+func (tm *BasicTaskManager) GetBroadcastInfo() interface{} {
+	// currently return an instant of emptys struct (struct{})
+	return struct{}{}
+}
+
+func (tm *BasicTaskManager) GetNext() Task {
+	t := tm.Pop()
+	delete(tm.taskMap, t.GetTaskID())
+	return t
+}

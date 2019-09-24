@@ -19,7 +19,7 @@ import (
 )
 
 func TestCanMakeWorld(t *testing.T) {
-	g := common.NewSimpleWorld()
+	g := common.CreateWorld(2, common.NewBasicTaskManager())
 	if len(g.GetRobots()) != 0 {
 		t.Errorf("Expected Empty Start, there should be no robots")
 	}
@@ -40,7 +40,7 @@ func TestCanMakeWorld(t *testing.T) {
 //}
 
 func TestCanModifyTasks(t *testing.T) {
-	g := common.NewSimpleWorld()
+	g := common.CreateWorld(2, common.NewBasicTaskManager())
 	task := make([]common.Task, 1)
 	task = append(task, common.TimePriorityTask{})
 	g.SetTasks(task)

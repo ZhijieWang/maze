@@ -42,8 +42,8 @@ import (
 //	4	- 	8 	-	12
 
 //CreateWorld generates a network of 12 nodes
-func CreateWorld(numRobots int) World {
-	w := NewSimpleWorld()
+func CreateWorld(numRobots int, tm TaskManager) World {
+	w := simpleWorld{}
 	var g *simple.WeightedUndirectedGraph
 	g = simple.NewWeightedUndirectedGraph(1, 10000000)
 	for i := 1; i < 13; i++ {
@@ -78,7 +78,7 @@ func CreateWorld(numRobots int) World {
 	}
 	w.grid = g
 	//w.timestamp = 0
-	return &w
+	return w
 }
 
 // World interface defines the behavior of World simulation
@@ -91,45 +91,40 @@ type World interface {
 	ClaimTask(tid TaskID, rid RobotID)
 }
 
-// SimpleWorld is the base implementation of a fully visible world, backed with Gonum Simple Graph
-type SimpleWorld struct {
+// simpleWorld is the base implementation of a fully visible world, backed with Gonum Simple Graph
+type simpleWorld struct {
 	robots []Robot
 	tasks  []Task
 	grid   *simple.WeightedUndirectedGraph
 }
 
 // SetTasks allows the new tasks to be added to the world
-func (s *SimpleWorld) SetTasks(tasks []Task) bool {
+func (s simpleWorld) SetTasks(tasks []Task) bool {
 	s.tasks = append(s.tasks, tasks...)
 	return true
 }
 
 // GetTasks allows the rerieval of tasks (available only)
-func (s *SimpleWorld) GetTasks() []Task {
+func (s simpleWorld) GetTasks() []Task {
 	return s.tasks
 }
 
 // GetGraph allows the retrieval of world state. The current implementation returns the full world. This is where visibility can be implemented
-func (s *SimpleWorld) GetGraph() *simple.WeightedUndirectedGraph {
+func (s simpleWorld) GetGraph() *simple.WeightedUndirectedGraph {
 	return s.grid
 }
 
-// NewSimpleWorld is the constructor for simple world case
-func NewSimpleWorld() SimpleWorld {
-	return SimpleWorld{}
-}
-
 // ClaimTask defines the mechanims that a Robot can claim a given task from the world
-func (s *SimpleWorld) ClaimTask(tid TaskID, rid RobotID) {
+func (s simpleWorld) ClaimTask(tid TaskID, rid RobotID) {
 }
 
 // GetRobots implemnts the fucntionality for retrieval of list of robots
-func (s *SimpleWorld) GetRobots() []Robot {
+func (s simpleWorld) GetRobots() []Robot {
 	return s.robots
 }
 
 // AddRobots add more robots to the stack
-func (s *SimpleWorld) AddRobots(robots []Robot) bool {
+func (s simpleWorld) AddRobots(robots []Robot) bool {
 	s.robots = append(s.robots, robots...)
 	return true
 }
