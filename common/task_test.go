@@ -1,21 +1,22 @@
-package common
+package common_test
 
 import (
+	"maze/common"
 	"testing"
 )
 
-func TestTaskQueuePushAtomicSuccess(t *testing.T) {
-	tq := NewTaskQueue()
-	tq.Push(TimePriorityTask{})
+func TestTaskManagerPushAtomicSuccess(t *testing.T) {
+	tq := common.NewBasicTaskManager()
+	tq.Push(common.NewTimePriorityTask())
 	if tq.Len() != 1 {
-		t.Errorf("Insert one task into queue, expect queue size to be 1\n")
+		t.Errorf("Insert one task into queue, expect queue size to be 1\n, current length is %d", tq.Len())
 	}
 }
 
-func TestTaskQueuePushMaintainOrder(t *testing.T) {
-	tq := NewTaskQueue()
-	t1 := NewTimePriorityTask()
-	t2 := NewTimePriorityTask()
+func TestTaskManagerPushMaintainOrder(t *testing.T) {
+	tq := common.NewBasicTaskManager()
+	t1 := common.NewTimePriorityTask()
+	t2 := common.NewTimePriorityTask()
 	tq.Push(t2)
 	tq.Push(t1)
 	if t1 == t2 {

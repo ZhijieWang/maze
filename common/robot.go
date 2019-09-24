@@ -30,40 +30,40 @@ func (r *SimpleRobot) ID() RobotID {
 }
 
 // Run is a function to be run by the simulation executor as a go routine
-func (r *SimpleRobot) Run() Trace {
+//func (r *SimpleRobot) Run() Trace {
 
-	//	var tick int
-	//	tick = <-clock
-	//	if r.task == nil {
-	//		task, p, _ := SelectTaskByDistance(taskReader, r, worldReader)
-	//		r.task = task
-	//		return Trace{
-	//			RobotID:   r.ID(),
-	//			Source:    r.location,
-	//			Target:    p[0],
-	//			Timestamp: tick,
-	//		}
-	//	}
-	//
-	//	if r.location == r.task.GetDestination() {
-	//		// at target location.
-	//		// unset task from robot
-	//		// update task to be done
-	//
-	//		err := taskReader.TaskUpdate(r.task.GetTaskID(), Completed)
-	//		if err != nil {
-	//			return Trace{}
-	//		}
-	//		return Trace{}
-	//	}
-	//	// go to next location in path
-	//	return Trace{
-	//		RobotID:   r.id,
-	//		Source:    r.location,
-	//		Target:    r.path[0],
-	//		Timestamp: tick,
-	//	}
-	//
-	//	//r.localWorld = worldReader.Observe(r.location)
-	//
-}
+//	var tick int
+//	tick = <-clock
+//	if r.task == nil {
+//		task, p, _ := SelectTaskByDistance(taskReader, r, worldReader)
+//		r.task = task
+//		return Trace{
+//			RobotID:   r.ID(),
+//			Source:    r.location,
+//			Target:    p[0],
+//			Timestamp: tick,
+//		}
+//	}
+//
+//	if r.location == r.task.GetDestination() {
+//		// at target location.
+//		// unset task from robot
+//		// update task to be done
+//
+//		err := taskReader.TaskUpdate(r.task.GetTaskID(), Completed)
+//		if err != nil {
+//			return Trace{}
+//		}
+//		return Trace{}
+//	}
+//	// go to next location in path
+//	return Trace{
+//		RobotID:   r.id,
+//		Source:    r.location,
+//		Target:    r.path[0],
+//		Timestamp: tick,
+//	}
+//
+//	//r.localWorld = worldReader.Observe(r.location)
+//
+//}

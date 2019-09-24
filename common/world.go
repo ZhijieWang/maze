@@ -15,26 +15,23 @@
 package common
 
 import (
-	"log"
-	"os"
-
-	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
-func init() {
-	log.SetPrefix("LOG: ")
-	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
-	log.Println("init started")
-	simID, err := uuid.NewUUID()
-	if err != nil {
-		log.Fatal(err)
-	}
+//
+//func init() {
+//	log.SetPrefix("LOG: ")
+//	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
+//	log.Println("init started")
+//	simID, err := uuid.NewUUID()
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 
-	outfile, _ := os.Create(simID.String() + ".log") // update path for your needs
-	log.SetOutput(outfile)
-
-}
+//	outfile, _ := os.Create(simID.String() + ".log") // update path for your needs
+//	log.SetOutput(outfile)
+//
+//}
 
 //	1	- 	5	-	9
 //	|	X	|		|
