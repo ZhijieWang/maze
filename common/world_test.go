@@ -41,7 +41,7 @@ func TestCanMakeWorld(t *testing.T) {
 
 func TestCanModifyTasks(t *testing.T) {
 	g := common.CreateWorld(2, common.NewBasicTaskManager())
-	task := make([]common.Task, 1)
+	task := make([]common.Task, 0)
 	task = append(task, common.TimePriorityTask{})
 	g.SetTasks(task)
 	if len(g.GetTasks()) == 0 {

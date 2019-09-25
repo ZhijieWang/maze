@@ -78,7 +78,7 @@ func CreateWorld(numRobots int, tm TaskManager) World {
 	}
 	w.grid = g
 	//w.timestamp = 0
-	return w
+	return &w
 }
 
 // World interface defines the behavior of World simulation
@@ -99,32 +99,32 @@ type simpleWorld struct {
 }
 
 // SetTasks allows the new tasks to be added to the world
-func (s simpleWorld) SetTasks(tasks []Task) bool {
+func (s *simpleWorld) SetTasks(tasks []Task) bool {
 	s.tasks = append(s.tasks, tasks...)
 	return true
 }
 
 // GetTasks allows the rerieval of tasks (available only)
-func (s simpleWorld) GetTasks() []Task {
+func (s *simpleWorld) GetTasks() []Task {
 	return s.tasks
 }
 
 // GetGraph allows the retrieval of world state. The current implementation returns the full world. This is where visibility can be implemented
-func (s simpleWorld) GetGraph() *simple.WeightedUndirectedGraph {
+func (s *simpleWorld) GetGraph() *simple.WeightedUndirectedGraph {
 	return s.grid
 }
 
 // ClaimTask defines the mechanims that a Robot can claim a given task from the world
-func (s simpleWorld) ClaimTask(tid TaskID, rid RobotID) {
+func (s *simpleWorld) ClaimTask(tid TaskID, rid RobotID) {
 }
 
 // GetRobots implemnts the fucntionality for retrieval of list of robots
-func (s simpleWorld) GetRobots() []Robot {
+func (s *simpleWorld) GetRobots() []Robot {
 	return s.robots
 }
 
 // AddRobots add more robots to the stack
-func (s simpleWorld) AddRobots(robots []Robot) bool {
+func (s *simpleWorld) AddRobots(robots []Robot) bool {
 	s.robots = append(s.robots, robots...)
 	return true
 }
