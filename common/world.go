@@ -15,6 +15,9 @@
 package common
 
 import (
+	"log"
+
+	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -69,12 +72,13 @@ func CreateWorld(numRobots int, tm TaskManager) World {
 	//r := rand.New(rand.NewSource(time.Now().Unix()))
 
 	for i := 0; i < numRobots; i++ {
-		//rID, err := uuid.NewUUID()
-		//	if err != nil {
-		//		log.Fatal(err)
-		//	}
+		rID, err := uuid.NewUUID()
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		//		w.robots = append(w.robots, &Robot{id: rID, location: g.Nodes()[r.Intn(len(g.Nodes()))]})
+		w.robots = append(w.robots, NewSimpleRobot(rID,
+			g.Nodes().Node()))
 	}
 	w.grid = g
 	//w.timestamp = 0

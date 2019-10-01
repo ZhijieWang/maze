@@ -1,12 +1,11 @@
 package main
 
 import (
-	"common"
 	"fmt"
+	"maze/common"
 )
 
 func main() {
 	fmt.Println("hello")
-	common.NewSimpleWorld()
-
+	common.CreateWorld(2, common.NewBasicTaskManager())
 }

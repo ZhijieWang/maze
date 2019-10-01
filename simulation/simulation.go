@@ -4,18 +4,17 @@ import (
 	"maze/common"
 )
 
-
-type Observer interface{
+type Observer interface {
 	OnNotify(data interface{})
 }
-type Notifier inteface{
-
+type Event interface {
+}
+type Notifier interface {
 	Register(Observer)
 	Deregister(Observer)
 	Notify(Event)
 }
 type Simulation interface {
-	Run() error
 	Run(obs Observer) error
 	Stop() bool
 }
@@ -31,20 +30,13 @@ func CreateCentralizedSimulation() Simulation {
 	return c
 }
 
-func (sim centralizedSimulation) Run() error {
-	return nil
-
-}
-
-
-func (sim centralizedSimulation) Run(obs Observer) error{
-	for _, i := range sim.world.robots {
+func (sim centralizedSimulation) Run(obs Observer) error {
+	for _, i := range sim.world.GetRobots() {
 		i.run()
 		obs.notify("Robot with status %d was run", i)
 	}
 	return nil
 }
-
 
 func (sim centralizedSimulation) Stop() bool {
 	return true

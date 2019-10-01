@@ -19,7 +19,7 @@ import (
 )
 
 func TestCanMakeWorld(t *testing.T) {
-	g := common.CreateWorld(2, common.NewBasicTaskManager())
+	g := common.CreateWorld(0, common.NewBasicTaskManager())
 	if len(g.GetRobots()) != 0 {
 		t.Errorf("Expected Empty Start, there should be no robots")
 	}
@@ -48,6 +48,6 @@ func TestCanModifyTasks(t *testing.T) {
 		t.Errorf("Expect the task list to be mutable\n")
 	}
 	if g.GetTasks()[0] != task[0] {
-		t.Errorf("Expect the Task setter methog to work, but failed")
+		t.Errorf("Expect the Task setter method to work, but failed")
 	}
 }
