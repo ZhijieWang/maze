@@ -38,3 +38,9 @@ func TestSimulationRunResult(t *testing.T) {
 	}
 
 }
+
+func TestContinuousRun(t *testing.T) {
+	var s = simulation.CreateCentralizedSimulation()
+	go s.Run(&baseObserver{})
+
+}

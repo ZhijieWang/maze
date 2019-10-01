@@ -68,20 +68,16 @@ func CreateWorld(numRobots int, tm TaskManager) World {
 	g.SetWeightedEdge(g.NewWeightedEdge(simple.Node(10), simple.Node(11), 1))
 	g.SetWeightedEdge(g.NewWeightedEdge(simple.Node(11), simple.Node(12), 1))
 	g.SetWeightedEdge(g.NewWeightedEdge(simple.Node(12), simple.Node(8), 1))
-	//randomly assign x robots to positions
-	//r := rand.New(rand.NewSource(time.Now().Unix()))
-
 	for i := 0; i < numRobots; i++ {
 		rID, err := uuid.NewUUID()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		w.robots = append(w.robots, NewSimpleRobot(rID,
+		w.AddRobot(NewSimpleRobot(rID,
 			g.Nodes().Node()))
 	}
 	w.grid = g
-	//w.timestamp = 0
 	return &w
 }
 
@@ -91,6 +87,7 @@ type World interface {
 	GetRobots() []Robot
 	//EdgeWeightPropagation(start graph.Node, step, depth int)
 	GetTasks() []Task
+	AddRobot(r Robot) bool
 	SetTasks(tasks []Task) bool
 	ClaimTask(tid TaskID, rid RobotID)
 }
@@ -131,4 +128,23 @@ func (s *simpleWorld) GetRobots() []Robot {
 func (s *simpleWorld) AddRobots(robots []Robot) bool {
 	s.robots = append(s.robots, robots...)
 	return true
+}
+func (s *simpleWorld) AddRobot(robot Robot) bool {
+	s.robots = append(s.robots, robot)
+	return true
+}
+
+func (s *simpleWorld) UpdateRobot(that Robot) bool {
+	for i, this := range s.robots {
+		if this.ID() == that.ID() {
+			s.robots[i] = that
+			return true
+
+		}
+	}
+	return false
+
+}
+func CreateBlankWorld() World {
+	return &simpleWorld{}
 }

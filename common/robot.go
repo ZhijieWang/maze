@@ -8,6 +8,8 @@ import (
 // RobotID is an alias to UUID for disambiguition purpose
 type RobotID = uuid.UUID
 type Robot interface {
+	ID() RobotID
+	Run() Trace
 }
 
 // SimpleRobot is a data holder struct for robot
@@ -28,7 +30,7 @@ func (r *simpleRobot) ID() RobotID {
 }
 
 // Run is a function to be run by the simulation executor as a go routine
-func (r *simpleRobot) Run(w World) Trace {
+func (r *simpleRobot) Run(w World, tm TaskManager) Trace {
 	var tick int
 	tick = 1
 	if r.task == nil {
