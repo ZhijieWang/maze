@@ -1,3 +1,29 @@
+Personal practice to develop a distributed system of bunch of robots moving around, simulated by a bunch of threads making state mutations.
+
+Sept 5 2018 -- 
+Started diving in without much of design. Originally separates out to several components. Robot, Task/TaskManager and World. Using World as the point of entry.
+Then run into a problem -- if the system is trully distributed, how much context/state does each robot maintains on its own.
+Trying to solve the problem of state maintainance, I started passng pointers around and have wait locks on central world states. The system is somehow much slower. commit 574ab.
+Each Robot execute in an GoRoutine concurrently.
+
+Sept 21 2018 --
+refactor the code base to have proper modules. Remove concurrency controls.
+
+June 11 2019 --
+
+Started implementing interfaces to abstract away all the confusing points of concurrent and distributed points. Trying to figure out a set of interfaces that work for both distributed message passing mode or contralized iterative  mode.
+
+
+Sept 24 - Ocr 1 2019
+
+Improve interface design. Trying to finish from previous work. Did some research. Other similar system are designed in stacks. Membership maintenance, state synchronization etc are in a different stack layer from main application. 
+
+Started implementing a driving component called simuation that drives and maintains system starts and end. Let Robot be the one doing the bulk load, localize a copy of world state. Using driver to maintain the state synchronization in a centralized fashion.
+
+
+
+
+
 A typical client and server model will require a sever, which server as many functionalities:
 1. Name discovery
 2. Syncrhonization and message bus
