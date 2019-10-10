@@ -16,11 +16,22 @@ package cmd
 
 import (
 	"fmt"
+	"maze/simulation"
 	"time"
 
 	"github.com/spf13/cobra"
-	"maze/common"
 )
+
+type basicObserver struct {
+	count int
+}
+
+func (b *basicObserver) OnNotify(data interface{}) {
+
+	if data != struct{}{} {
+		b.count += 1
+	}
+}
 
 // simulateCmd represents the simulate command
 var simulateCmd = &cobra.Command{
@@ -35,10 +46,9 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("simulate called")
 		start := time.Now()
-		g := common.CreateWorld(NumRobots)
-		for i := 0; i < Iterations; i++ {
-			g.Simulate(common.TaskMove, common.GraphReWeightByRadiation, common.TaskGenerator)
-		}
+		s := simulation.CreateCentralizedSimulation()
+
+		s.Run(&basicObserver{})
 		elapsed := time.Since(start)
 		fmt.Printf("Simulation took %s for %v iterations \n", elapsed, Iterations)
 	},

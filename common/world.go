@@ -44,6 +44,12 @@ import (
 //	|		|		|
 //	4	- 	8 	-	12
 
+func CreateBlankWorld() World {
+	s := simpleWorld{}
+	s.grid = simple.NewWeightedUndirectedGraph(1, 10000000)
+	return &s
+}
+
 //CreateWorld generates a network of 12 nodes
 func CreateWorld(numRobots int, tm TaskManager) World {
 	w := simpleWorld{}
@@ -85,7 +91,7 @@ func CreateWorld(numRobots int, tm TaskManager) World {
 type World interface {
 	GetGraph() *simple.WeightedUndirectedGraph
 	GetRobots() []Robot
-	//EdgeWeightPropagation(start graph.Node, step, depth int)
+	UpdateRobot(Robot) bool
 	GetTasks() []Task
 	AddRobot(r Robot) bool
 	SetTasks(tasks []Task) bool
@@ -144,7 +150,4 @@ func (s *simpleWorld) UpdateRobot(that Robot) bool {
 	}
 	return false
 
-}
-func CreateBlankWorld() World {
-	return &simpleWorld{}
 }

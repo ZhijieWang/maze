@@ -24,11 +24,13 @@ type Simulation interface {
 
 type centralizedSimulation struct {
 	world common.World
+	tm    common.TaskManager
 }
 
 func CreateCentralizedSimulation() Simulation {
 
 	var c = centralizedSimulation{}
+	c.tm = common.NewBasicTaskManager()
 	//	c.world = common.CreateWorld(1, common.NewBasicTaskManager())
 	c.world = common.CreateBlankWorld()
 	var numRobots int = 5
@@ -37,20 +39,19 @@ func CreateCentralizedSimulation() Simulation {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		c.world.AddRobot(common.NewSimpleRobot(rID,
-
-			c.world.GetGraph().Nodes().Node()))
+		c.world.AddRobot(common.NewSimpleRobot(rID, c.world.GetGraph().Nodes().Node()))
 	}
 	return c
 }
 
 func (sim centralizedSimulation) Run(obs Observer) error {
 	for _, i := range sim.world.GetRobots() {
-		i.run()
+		i.Run(sim.world, &sim.tm)
 		sim.world.UpdateRobot(i)
-		obs.notify("Robot with status %d was run", i)
+		obs.OnNotify(1)
 	}
+	obs.OnNotify(nil)
+
 	return nil
 }
 

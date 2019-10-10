@@ -5,42 +5,23 @@ import (
 	"testing"
 )
 
-func TestSimulationRunStart(t *testing.T) {
-	var s = simulation.CreateCentralizedSimulation()
-	err := s.Run()
-	if err != nil {
-		t.Error("The run failed to start")
-	}
+type basicObserver struct {
+	count int
 }
 
-type baseObserver struct {
-	count  int
-	Output chan int
-}
+func (b *basicObserver) OnNotify(data interface{}) {
 
-func (b *baseObserver) OnNotify(data interface{}) {
 	if data != struct{}{} {
 		b.count += 1
-	} else {
-		b.Output <- b.count
 	}
 }
 func TestSimulationRunResult(t *testing.T) {
-	var s = simulation.CreateCentralizedSimulation()
-	c := make(chan int)
-	count := <-c
-
-	obs := baseObserver{0, c}
+	s := simulation.CreateCentralizedSimulation()
+	obs := basicObserver{}
 	s.Run(&obs)
 
-	if count == 0 {
+	if obs.count == 0 {
 		t.Errorf("Expect some run. 0 run")
 	}
-
-}
-
-func TestContinuousRun(t *testing.T) {
-	var s = simulation.CreateCentralizedSimulation()
-	go s.Run(&baseObserver{})
 
 }

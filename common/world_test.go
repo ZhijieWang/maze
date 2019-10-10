@@ -16,6 +16,8 @@ package common_test
 import (
 	"maze/common"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestCanMakeWorld(t *testing.T) {
@@ -29,15 +31,17 @@ func TestCanMakeWorld(t *testing.T) {
 
 }
 
-//func TestCanAssignRobot(t *testing.T) {
-//	g := common.NewSimpleWorld()
-//	var robots [5]common.Robot = [5]common.Robot{common.Robot{}}
-//	g.AddRobots(robots[:])
-//	r := g.GetRobots()
-//	if len(r) != 5 {
-//		t.Errorf("We have a problem. Expected length 5, actual length %d", len(r))
-//	}
-//}
+func TestCanAssignRobot(t *testing.T) {
+	g := common.CreateBlankWorld()
+	id, _ := uuid.NewUUID()
+	node := g.GetGraph().NewNode()
+	r := common.NewSimpleRobot(id, node)
+	g.AddRobot(r)
+	rs := g.GetRobots()
+	if len(rs) != 1 {
+		t.Errorf("We have a problem. Expected length 1, actual length %d", len(rs))
+	}
+}
 
 func TestCanModifyTasks(t *testing.T) {
 	g := common.CreateWorld(2, common.NewBasicTaskManager())
