@@ -21,17 +21,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type basicObserver struct {
-	count int
-}
-
-func (b *basicObserver) OnNotify(data interface{}) {
-
-	if data != struct{}{} {
-		b.count += 1
-	}
-}
-
 // simulateCmd represents the simulate command
 var simulateCmd = &cobra.Command{
 	Use:   "simulate",

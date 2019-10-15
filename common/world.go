@@ -18,6 +18,7 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -53,8 +54,7 @@ func CreateBlankWorld() World {
 //CreateWorld generates a network of 12 nodes
 func CreateWorld(numRobots int, tm TaskManager) World {
 	w := simpleWorld{}
-	var g *simple.WeightedUndirectedGraph
-	g = simple.NewWeightedUndirectedGraph(1, 10000000)
+	var g *simple.WeightedUndirectedGraph = simple.NewWeightedUndirectedGraph(1, 10000000)
 	for i := 1; i < 13; i++ {
 		g.AddNode(simple.Node(i))
 	}
@@ -89,7 +89,7 @@ func CreateWorld(numRobots int, tm TaskManager) World {
 
 // World interface defines the behavior of World simulation
 type World interface {
-	GetGraph() *simple.WeightedUndirectedGraph
+	GetGraph() *graph.Graph
 	GetRobots() []Robot
 	UpdateRobot(Robot) bool
 	GetTasks() []Task
@@ -117,7 +117,7 @@ func (s *simpleWorld) GetTasks() []Task {
 }
 
 // GetGraph allows the retrieval of world state. The current implementation returns the full world. This is where visibility can be implemented
-func (s *simpleWorld) GetGraph() *simple.WeightedUndirectedGraph {
+func (s *simpleWorld) GetGraph() graph.Graph {
 	return s.grid
 }
 

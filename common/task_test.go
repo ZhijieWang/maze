@@ -8,8 +8,7 @@ import (
 func TestTaskManagerPushAtomicSuccess(t *testing.T) {
 	var tq common.TaskManager = common.NewBasicTaskManager()
 	tq.AddTask(common.NewTimePriorityTask())
-	var l int
-	l = len(tq.GetAllTasks())
+	var l int = len(tq.GetAllTasks())
 	if l != 1 {
 		t.Errorf("Insert one task into queue, expect queue size to be 1\n, current length is %d", l)
 	}

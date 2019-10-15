@@ -76,7 +76,10 @@ func (b *traceObserver) OnNotify(data interface{}) {
 func TestSimulationRunResult(t *testing.T) {
 	s := CreateCentralizedSimulation()
 	obs := basicObserver{}
-	s.Run(&obs)
+	err := s.Run(&obs)
+	if err != nil {
+		t.Errorf("Execution failed")
+	}
 	s.Stop()
 	if obs.count == 0 {
 		t.Errorf("Expect some run. 0 run")
@@ -87,7 +90,10 @@ func TestSimulationRunResult(t *testing.T) {
 func TestSimulationExecuteTask(t *testing.T) {
 	s := CreateCentralizedSimulation()
 	obs := traceObserver{}
-	s.Run(&obs)
+	err := s.Run(&obs)
+	if err != nil {
+		t.Errorf("Execution failed")
+	}
 	if len(obs.traces) == 0 {
 		t.Error("Failed to capture run traces")
 	}

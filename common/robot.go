@@ -1,4 +1,4 @@
-// Copyright © 2018 Zhijie (Bill) Wang <wangzhijiebill@gmail.com>
+// Copyright © 2019 Zhijie (Bill) Wang <wangzhijiebill@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,9 +44,7 @@ func (r *simpleRobot) ID() RobotID {
 
 // Run is a function that can be run in a concurrent way
 func (r *simpleRobot) Run(w World, tm TaskManager) Trace {
-	var tick int
-
-	tick = 1
+	var tick int = 1
 	if r.task == nil {
 		if tm.HasTasks() {
 			r.task = tm.GetTasks(1)[0]

@@ -3,9 +3,9 @@ package common
 //BasicTaskManager implements a PassiveTaskManager interface, with procedure generation of tasks,
 // to ensure the task queue size greater than the amount of robots
 type BasicTaskManager struct {
-	taskList    []Task
-	taskArchive []Task
-	taskMap     map[TaskID]Task
+	taskList []Task
+
+	taskMap map[TaskID]Task
 }
 
 // GetTasks implements the GetTasks method from TaskManager Interface
@@ -27,10 +27,11 @@ func (tm *BasicTaskManager) TaskUpdate(taskID TaskID, status TaskStatus) error {
 
 	t, err := tm.GetByID(taskID)
 	if err != nil {
+		// couldn't find
 		return err
 	}
-	t.UpdateStatus(status)
-	return nil
+	err = t.UpdateStatus(status)
+	return err
 }
 
 func NewBasicTaskManager() *BasicTaskManager {
