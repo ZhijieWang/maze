@@ -21,7 +21,9 @@ Improve interface design. Trying to finish from previous work. Did some research
 Started implementing a driving component called simuation that drives and maintains system starts and end. Let Robot be the one doing the bulk load, localize a copy of world state. Using driver to maintain the state synchronization in a centralized fashion.
 
 
+Oct 14 2019
 
+After first set of tests pass, reviewed the code. The interganbled pieces are due to trying to design interface and implementing basic objects fulfilling the interface -- making tests difficult. To ensure the interface is correct, test implementations should be implemented in test packages. This allows functions in test packages to introspect object states (Simulate), and some Basic Implementations could stay with the Interface package, like World, to avoid repetitive code (technically, for more robust testing, each test case should implement its own depended sub objects/interface) .
 
 
 A typical client and server model will require a sever, which server as many functionalities:
