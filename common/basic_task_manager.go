@@ -1,22 +1,16 @@
 package common
 
-import (
-	"sync"
-)
-
 //BasicTaskManager implements a PassiveTaskManager interface, with procedure generation of tasks,
 // to ensure the task queue size greater than the amount of robots
 type BasicTaskManager struct {
-	taskList       []Task
-	taskListRWLock *sync.RWMutex
-	taskArchive    []Task
-	taskMap        map[TaskID]Task
+	taskList    []Task
+	taskArchive []Task
+	taskMap     map[TaskID]Task
 }
 
 // GetTasks implements the GetTasks method from TaskManager Interface
 func (tm *BasicTaskManager) GetTasks(i int) []Task {
-	tm.taskListRWLock.RLock()
-	defer tm.taskListRWLock.RUnlock()
+
 	return tm.taskList
 }
 
@@ -108,4 +102,9 @@ func (tm *BasicTaskManager) GetNext() Task {
 	t := tm.Pop()
 	delete(tm.taskMap, t.GetTaskID())
 	return t
+}
+
+func (tm *BasicTaskManager) HasTasks() bool {
+	return len(tm.taskList) > 0
+
 }

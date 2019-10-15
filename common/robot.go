@@ -22,7 +22,7 @@ import (
 type RobotID = uuid.UUID
 type Robot interface {
 	ID() RobotID
-	Run(w World, tm *TaskManager) Trace
+	Run(w World, tm TaskManager) Trace
 }
 
 // SimpleRobot is a data holder struct for robot
@@ -43,12 +43,13 @@ func (r *simpleRobot) ID() RobotID {
 }
 
 // Run is a function that can be run in a concurrent way
-func (r *simpleRobot) Run(w World, tm *TaskManager) Trace {
+func (r *simpleRobot) Run(w World, tm TaskManager) Trace {
 	var tick int
+
 	tick = 1
 	if r.task == nil {
-		if len(w.GetTasks()) > 0 {
-			r.task = w.GetTasks()[0]
+		if tm.HasTasks() {
+			r.task = tm.GetTasks(1)[0]
 			w.ClaimTask(r.task.GetTaskID(), r.ID())
 			return Trace{
 				RobotID:   r.ID(),

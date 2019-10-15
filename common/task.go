@@ -57,6 +57,7 @@ type TaskManager interface {
 	TaskUpdate(taskID TaskID, status TaskStatus) error
 	AddTask(t Task) bool
 	AddTasks(tList []Task) bool
+	HasTasks() bool
 }
 
 // PassiveTaskManager extends the TaskManager interface and allows robots to claim tasks
