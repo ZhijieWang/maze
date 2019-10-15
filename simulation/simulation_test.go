@@ -1,12 +1,56 @@
 package simulation_test
 
 import (
+	"log"
 	"maze/common"
 	"maze/simulation"
 	"testing"
 
 	"github.com/google/uuid"
 )
+
+type centralizedSimulation struct {
+	world common.World
+	tm    common.TaskManager
+}
+
+func CreateCentralizedSimulation() simulation.Simulation {
+
+	var c = centralizedSimulation{}
+	c.tm = common.NewBasicTaskManager()
+	c.world = common.CreateWorld(1, common.NewBasicTaskManager())
+	// c.world = common.CreateBlankWorld()
+	var numRobots int = 5
+	for i := 0; i < numRobots; i++ {
+		rID, err := uuid.NewUUID()
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.world.AddRobot(common.NewSimpleRobot(rID, c.world.GetGraph().Nodes().Node()))
+	}
+	for i := 0; i < 20; i++ {
+		t := common.NewTimePriorityTask()
+		t.Destination = c.world.GetGraph().Nodes().Node()
+		c.tm.AddTask(t)
+	}
+
+	return c
+}
+
+func (sim centralizedSimulation) Run(obs simulation.Observer) error {
+	for _, i := range sim.world.GetRobots() {
+		trace := i.Run(sim.world, sim.tm)
+		sim.world.UpdateRobot(i)
+		obs.OnNotify(trace)
+	}
+	obs.OnNotify(nil)
+
+	return nil
+}
+
+func (sim centralizedSimulation) Stop() bool {
+	return true
+}
 
 type basicObserver struct {
 	count int
@@ -31,7 +75,7 @@ func (b *traceObserver) OnNotify(data interface{}) {
 }
 
 func TestSimulationRunResult(t *testing.T) {
-	s := simulation.CreateCentralizedSimulation()
+	s := CreateCentralizedSimulation()
 	obs := basicObserver{}
 	s.Run(&obs)
 	s.Stop()
@@ -42,7 +86,7 @@ func TestSimulationRunResult(t *testing.T) {
 }
 
 func TestSimulationExecuteTask(t *testing.T) {
-	s := simulation.CreateCentralizedSimulation()
+	s := CreateCentralizedSimulation()
 	obs := traceObserver{}
 	s.Run(&obs)
 	if len(obs.traces) == 0 {
