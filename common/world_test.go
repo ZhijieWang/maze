@@ -32,10 +32,9 @@ func TestCanMakeWorld(t *testing.T) {
 }
 
 func TestCanAssignRobot(t *testing.T) {
-	g := common.CreateBlankWorld()
+	g := common.CreateWorld(2, common.NewBasicTaskManager())
 	id, _ := uuid.NewUUID()
-	node := g.GetGraph().NewNode()
-	r := common.NewSimpleRobot(id, node)
+	r := common.NewSimpleRobot(id, g.GetGraph().Node(0))
 	g.AddRobot(r)
 	rs := g.GetRobots()
 	if len(rs) != 1 {

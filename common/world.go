@@ -89,7 +89,7 @@ func CreateWorld(numRobots int, tm TaskManager) World {
 
 // World interface defines the behavior of World simulation
 type World interface {
-	GetGraph() *graph.Graph
+	GetGraph() graph.Graph
 	GetRobots() []Robot
 	UpdateRobot(Robot) bool
 	GetTasks() []Task

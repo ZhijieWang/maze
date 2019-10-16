@@ -91,7 +91,7 @@ func (w *WarehouseWorld) GetGraph() graph.Graph {
 }
 
 func (w *WarehouseWorld) GetRobots() []common.Robot {
-	values := make([]common.Robot, len(w.robots), len(w.robots))
+	values := make([]common.Robot, len(w.robots))
 	for _, value := range w.robots {
 		values = append(values, value)
 	}
