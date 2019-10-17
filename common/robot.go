@@ -60,14 +60,6 @@ func (r *simpleRobot) Run(w World, tm TaskManager) Trace {
 			return Trace{}
 		}
 	} else if r.location == r.task.GetDestination() {
-		// at target location.
-		// unset task from robothttps://github.com/int3h/SublimeFixMacPath
-		// update task to be done
-
-		//		err := w.TaskUpdate(r.task.GetTaskID(), Completed)
-		//		if err != nil {
-		//			return Trace{}
-		//		}
 		return Trace{}
 	}
 	// go to next location in path

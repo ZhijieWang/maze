@@ -14,9 +14,7 @@
 package impl
 
 import (
-	"fmt"
 	"log"
-	"math/rand"
 	"maze/common"
 
 	"github.com/google/uuid"
@@ -47,47 +45,42 @@ func (r *simpleWarehouseRobot) Location() graph.Node {
 }
 
 //TaskMove is a movement policy for Task Oriented movement
-func TaskMove(w common.World, r simpleWarehouseRobot, t int) common.Trace {
-	log.Printf("Robot %s can see %d Tasks, current has %vi\n", r.id, len(w.GetTasks()), r.task)
-	if r.task != nil {
-		log.Printf("Robot %s is carrying out Task %+v\n", r.id, r.task)
-		fmt.Printf("%+v\n", r.path)
-		fmt.Printf("current location %s, task target location %s\n", r.Location(), r.task.GetDestination())
-		trace := common.Trace{
-			RobotID:   r.ID(),
-			Source:    r.Location(),
-			Target:    r.path[0],
-			Timestamp: t,
-		}
-		r.location = r.path[0]
-		if len(r.path) == 1 {
-			log.Printf("Task %+v done by Robot %s\n", r.task, r.id)
-			r.task = nil
-			r.path = nil
-		} else {
-			r.path = r.path[1:]
-		}
-		return trace
-	}
-	tasks := w.GetTasks()
-	if len(tasks) == 0 {
-		log.Println("No Tasks")
+// func TaskMove(w common.World, tm common.TaskManager, r simpleWarehouseRobot, t int) common.Trace {
+// 	if r.task != nil {
+// 		trace := common.Trace{
+// 			RobotID:   r.ID(),
+// 			Source:    r.Location(),
+// 			Target:    r.path[0],
+// 			Timestamp: t,
+// 		}
+// 		r.location = r.path[0]
+// 		if len(r.path) == 1 {
+// 			r.task = nil
+// 			r.path = nil
+// 		} else {
+// 			r.path = r.path[1:]
+// 		}
+// 		return trace
+// 	}
+// 	tasks := w.GetTasks()
+// 	if len(tasks) == 0 {
+// 		log.Println("No Tasks")
 
-		return common.NoMove(w, &r, t)
-	}
-	tMin := tasks[rand.Intn(len(tasks))]
+// 		return common.NoMove(w, &r, t)
+// 	}
+// 	tMin := tasks[rand.Intn(len(tasks))]
 
-	pt, _ := path.BellmanFordFrom(r.Location(), w.GetGraph())
-	p, _ := pt.To(tMin.GetDestination().ID())
-	r.path = p[1:]
-	r.task = tMin
-	return common.Trace{
-		RobotID:   r.ID(),
-		Source:    r.Location(),
-		Target:    p[0],
-		Timestamp: t,
-	}
-}
+// 	pt, _ := path.BellmanFordFrom(r.Location(), w.GetGraph())
+// 	p, _ := pt.To(tMin.GetDestination().ID())
+// 	r.path = p[1:]
+// 	r.task = tMin
+// 	return common.Trace{
+// 		RobotID:   r.ID(),
+// 		Source:    r.Location(),
+// 		Target:    p[0],
+// 		Timestamp: t,
+// 	}
+// }
 
 // Run is a function that can be run in a concurrent way
 func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common.Trace {
@@ -101,6 +94,14 @@ func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common
 			if err != nil {
 				panic("Task Update Failed")
 			}
+			log.Printf("RObot %+v", r)
+			p, ok := path.BellmanFordFrom(r.Location(), w.GetGraph())
+
+			pt, _ := p.To(r.task.GetDestination().ID())
+			if !ok {
+				panic("No Path")
+			}
+			r.path = pt[1:]
 			return common.Trace{
 				RobotID:   r.ID(),
 				Source:    r.location,
@@ -125,14 +126,25 @@ func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common
 			Target:    graph.Empty.Node(),
 			Timestamp: r.tick,
 		}
+
+	} else {
+		// go to next location in path
+		r.location = r.path[0]
+		r.path = r.path[1:]
+		return common.Trace{
+			RobotID:   r.id,
+			Source:    r.location,
+			Target:    r.task.GetDestination(),
+			Timestamp: r.tick,
+		}
 	}
-	// go to next location in path
 	return common.Trace{
 		RobotID:   r.id,
 		Source:    r.location,
 		Target:    graph.Empty.Node(),
 		Timestamp: r.tick,
 	}
+
 	// r.localWorld = worldReader.Observe(r.location)
 }
 func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node) common.Robot {
@@ -217,7 +229,7 @@ func CreateWarehouseWorld() *WarehouseWorld {
 		}
 
 		w.AddRobot(NewSimpleWarehouseRobot(rID,
-			w.graph.Nodes().Node()))
+			w.graph.Node(1)))
 	}
 	return w
 }
@@ -330,4 +342,11 @@ func (stm *SimulatedTaskManager) AddTasks(tList []common.Task) bool {
 
 func (stm *SimulatedTaskManager) HasTasks() bool {
 	return (0 != len(stm.tasks))
+}
+func (stm *SimulatedTaskManager) FinishedCount() int {
+	return len(stm.archive)
+}
+
+func (stm *SimulatedTaskManager) ActiveCount() int {
+	return len(stm.active)
 }

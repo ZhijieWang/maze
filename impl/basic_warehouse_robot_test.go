@@ -14,6 +14,7 @@
 package impl
 
 import (
+	"log"
 	"maze/common"
 	"reflect"
 	"testing"
@@ -158,11 +159,12 @@ func TestHasTasks(t *testing.T) {
 func TestRobotClaimTask(t *testing.T) {
 
 	stm := CreateSimulatedTaskManager()
-	t1 := common.NewTimePriorityTask()
-	t1.Origin = graph.Empty.Node()
-	t1.Destination = graph.Empty.Node()
-	stm.AddTask(t1)
+
 	w := CreateWarehouseWorld()
+	t1 := common.NewTimePriorityTask()
+	t1.Origin = w.GetGraph().Node(1)
+	t1.Destination = w.GetGraph().Node(2)
+	stm.AddTask(t1)
 	id, _ := uuid.NewUUID()
 	robot := NewSimpleWarehouseRobot(id, w.graph.Node(1))
 	r := robot.(*simpleWarehouseRobot)
@@ -186,6 +188,12 @@ func TestSimultation(t *testing.T) {
 	if len(robots) <= 0 {
 		t.Error("Not enough robots")
 	}
+	for _, i := range robots {
+		if i.Location() == nil {
+			t.Errorf("Robot lication is nil")
+			t.FailNow()
+		}
+	}
 	stm := CreateSimulatedTaskManager()
 	t1 := common.NewTimePriorityTask()
 	t2 := common.NewTimePriorityTask()
@@ -200,6 +208,7 @@ func TestSimultation(t *testing.T) {
 	for _, i := range robots {
 		trace = append(trace, i.Run(w, stm))
 	}
+
 	if len(stm.GetAllTasks()) > 1 {
 		t.Errorf("Robot Failed to claim tasks")
 	}
@@ -221,13 +230,22 @@ func TestSimultation(t *testing.T) {
 	if !tclaimed {
 		t.Error("Failed to emit trace of t2")
 	}
+	if stm.ActiveCount() != 2 {
+		t.Errorf("Failed. Acive task count should be 2, yet received %d", stm.ActiveCount())
+		t.FailNow()
+	}
 	// cycle to move to targets
 	for _, i := range robots {
-		i.Run(w, stm)
+		log.Printf("%+v", i.Run(w, stm))
 	}
-
+	for _, i := range robots {
+		log.Printf("%+v", i.Run(w, stm))
+	}
 	if len(stm.GetAllTasks()) != 0 {
 		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
 	}
-
+	if stm.FinishedCount() != 2 {
+		t.Errorf("Failed. Finished task count should be 2, yet received %d", stm.FinishedCount())
+		t.FailNow()
+	}
 }
