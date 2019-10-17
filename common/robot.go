@@ -23,6 +23,7 @@ type RobotID = uuid.UUID
 type Robot interface {
 	ID() RobotID
 	Run(w World, tm TaskManager) Trace
+	Location() graph.Node
 }
 
 // SimpleRobot is a data holder struct for robot
@@ -73,6 +74,9 @@ func (r *simpleRobot) Run(w World, tm TaskManager) Trace {
 	return Trace{}
 	//r.localWorld = worldReader.Observe(r.location)
 
+}
+func (r *simpleRobot) Location() graph.Node {
+	return r.location
 }
 func NewSimpleRobot(id RobotID, location graph.Node) Robot {
 	s := simpleRobot{

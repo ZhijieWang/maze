@@ -46,6 +46,7 @@ type Task interface {
 	GetDestination() graph.Node
 	GetOrigination() graph.Node
 	UpdateStatus(status TaskStatus) error
+	GetStatus() TaskStatus
 }
 
 //TaskManager defines task manager interfaces. All task generator, coordinator must follow this type

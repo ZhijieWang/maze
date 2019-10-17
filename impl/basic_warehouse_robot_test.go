@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"gonum.org/v1/gonum/graph"
 )
 
@@ -105,6 +107,79 @@ func TestNewSimpleWarehouseRobot(t *testing.T) {
 	}
 }
 
+func TestBeAbleToGetRobots(t *testing.T) {
+	w := CreateWarehouseWorld()
+
+	for _, r := range w.GetRobots() {
+		if r == nil {
+			t.Errorf("We got a problem, robot shouldn't be nil")
+			t.FailNow()
+		}
+	}
+}
+func TestHasTasks(t *testing.T) {
+	stm := CreateSimulatedTaskManager()
+	t1 := common.NewTimePriorityTask()
+	t2 := common.NewTimePriorityTask()
+	t1.Origin = graph.Empty.Node()
+	t2.Origin = graph.Empty.Node()
+	t1.Destination = graph.Empty.Node()
+	t2.Destination = graph.Empty.Node()
+	stm.AddTask(t1)
+	stm.AddTask(t2)
+	// Expect HasTask to Be True
+	if stm.HasTasks() {
+		// no problem
+	} else {
+		t.Errorf("The HasTasks should return true, given no claim has been done")
+	}
+	err := stm.TaskUpdate(t1.GetTaskID(), common.Completed)
+	if err != nil {
+		t.Error("Upfate failed")
+		t.FailNow()
+	}
+	// Expect HasTask to Be True
+	if stm.HasTasks() {
+		// no problem
+	} else {
+		t.Errorf("The HasTasks should return true, though 1 out of 2 is done")
+	}
+	err = stm.TaskUpdate(t2.GetTaskID(), common.Completed)
+	if err != nil {
+		t.Error("Upfate failed")
+		t.FailNow()
+	}
+	// Expect HasTask to Be True
+	if stm.HasTasks() {
+		t.Errorf("The HasTasks should return false, 2 out of 2 are done")
+	}
+}
+
+func TestRobotClaimTask(t *testing.T) {
+
+	stm := CreateSimulatedTaskManager()
+	t1 := common.NewTimePriorityTask()
+	t1.Origin = graph.Empty.Node()
+	t1.Destination = graph.Empty.Node()
+	stm.AddTask(t1)
+	w := CreateWarehouseWorld()
+	id, _ := uuid.NewUUID()
+	robot := NewSimpleWarehouseRobot(id, w.graph.Node(1))
+	r := robot.(*simpleWarehouseRobot)
+	if r.task != nil {
+		t.Error("Shouldn't have any task on newly instatiated item")
+	}
+	r.Run(w, stm)
+
+	if stm.HasTasks() {
+		t.Errorf("Robot failed to update task status")
+		t.FailNow()
+	}
+
+	if r.task == nil {
+		t.Error("Failed to claim task")
+	}
+}
 func TestSimultation(t *testing.T) {
 	w := CreateWarehouseWorld()
 	robots := w.GetRobots()
@@ -112,7 +187,47 @@ func TestSimultation(t *testing.T) {
 		t.Error("Not enough robots")
 	}
 	stm := CreateSimulatedTaskManager()
+	t1 := common.NewTimePriorityTask()
+	t2 := common.NewTimePriorityTask()
+	t1.Origin = w.graph.Node(2)
+	t2.Origin = w.graph.Node(2)
+	t1.Destination = w.graph.Node(6)
+	t2.Destination = w.graph.Node(5)
+	stm.AddTask(t1)
+	stm.AddTask(t2)
+	// cycle to claim tasks
+	trace := []common.Trace{}
+	for _, i := range robots {
+		trace = append(trace, i.Run(w, stm))
+	}
+	if len(stm.GetAllTasks()) > 1 {
+		t.Errorf("Robot Failed to claim tasks")
+	}
+	tclaimed := false
+	for _, ts := range trace {
+		if ts.Target != nil && ts.Target.ID() == 6 {
+			tclaimed = true
+		}
+	}
+	if !tclaimed {
+		t.Error("Failed to emit trace of t1")
+	}
+	tclaimed = false
+	for _, ts := range trace {
+		if ts.Target != nil && ts.Target.ID() == 5 {
+			tclaimed = true
+		}
+	}
+	if !tclaimed {
+		t.Error("Failed to emit trace of t2")
+	}
+	// cycle to move to targets
 	for _, i := range robots {
 		i.Run(w, stm)
 	}
+
+	if len(stm.GetAllTasks()) != 0 {
+		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
+	}
+
 }

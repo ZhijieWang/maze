@@ -64,6 +64,10 @@ func (tpt TimePriorityTask) GetOrigination() graph.Node {
 
 // UpdateStatus update the current status of the task, further logic is needed
 func (tpt TimePriorityTask) UpdateStatus(status TaskStatus) error {
-	tpt.Status = status
+	(&tpt).Status = status
 	return nil
+}
+
+func (tpt TimePriorityTask) GetStatus() TaskStatus {
+	return tpt.Status
 }

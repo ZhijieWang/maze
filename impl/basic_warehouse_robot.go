@@ -14,11 +14,14 @@
 package impl
 
 import (
+	"fmt"
 	"log"
+	"math/rand"
 	"maze/common"
 
 	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -32,43 +35,105 @@ type simpleWarehouseRobot struct {
 	task common.Task
 	// path is the current planned path to deliver the task
 	path []graph.Node
+	tick int
 }
 
 // ID returns the robot UUID
 func (r *simpleWarehouseRobot) ID() common.RobotID {
 	return r.id
 }
+func (r *simpleWarehouseRobot) Location() graph.Node {
+	return r.location
+}
+
+//TaskMove is a movement policy for Task Oriented movement
+func TaskMove(w common.World, r simpleWarehouseRobot, t int) common.Trace {
+	log.Printf("Robot %s can see %d Tasks, current has %vi\n", r.id, len(w.GetTasks()), r.task)
+	if r.task != nil {
+		log.Printf("Robot %s is carrying out Task %+v\n", r.id, r.task)
+		fmt.Printf("%+v\n", r.path)
+		fmt.Printf("current location %s, task target location %s\n", r.Location(), r.task.GetDestination())
+		trace := common.Trace{
+			RobotID:   r.ID(),
+			Source:    r.Location(),
+			Target:    r.path[0],
+			Timestamp: t,
+		}
+		r.location = r.path[0]
+		if len(r.path) == 1 {
+			log.Printf("Task %+v done by Robot %s\n", r.task, r.id)
+			r.task = nil
+			r.path = nil
+		} else {
+			r.path = r.path[1:]
+		}
+		return trace
+	}
+	tasks := w.GetTasks()
+	if len(tasks) == 0 {
+		log.Println("No Tasks")
+
+		return common.NoMove(w, &r, t)
+	}
+	tMin := tasks[rand.Intn(len(tasks))]
+
+	pt, _ := path.BellmanFordFrom(r.Location(), w.GetGraph())
+	p, _ := pt.To(tMin.GetDestination().ID())
+	r.path = p[1:]
+	r.task = tMin
+	return common.Trace{
+		RobotID:   r.ID(),
+		Source:    r.Location(),
+		Target:    p[0],
+		Timestamp: t,
+	}
+}
 
 // Run is a function that can be run in a concurrent way
 func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common.Trace {
-	var tick int = 1
+	r.tick += 1
+	// return TaskMove(w, *r, r.tick)
 	if r.task == nil {
 		if tm.HasTasks() {
-			r.task = tm.GetTasks(1)[0]
-			w.ClaimTask(r.task.GetTaskID(), r.ID())
+			// there is at least a task to claim
+			(r.task) = tm.GetNext()
+			err := tm.TaskUpdate(r.task.GetTaskID(), common.Assigned)
+			if err != nil {
+				panic("Task Update Failed")
+			}
 			return common.Trace{
 				RobotID:   r.ID(),
 				Source:    r.location,
 				Target:    r.task.GetDestination(),
-				Timestamp: tick,
+				Timestamp: r.tick,
 			}
-		} else {
-			return common.Trace{}
 		}
+		// there is no task to do
 	} else if r.location == r.task.GetDestination() {
-
 		// at target location.
 		// unset task from robot
 		// update task to be done
 		err := tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
+
 		if err != nil {
-			return common.Trace{}
+			panic("Failed to update task")
 		}
-		return common.Trace{}
+		r.task = nil
+		return common.Trace{
+			RobotID:   r.id,
+			Source:    r.location,
+			Target:    graph.Empty.Node(),
+			Timestamp: r.tick,
+		}
 	}
 	// go to next location in path
-	return common.Trace{}
-	//r.localWorld = worldReader.Observe(r.location)
+	return common.Trace{
+		RobotID:   r.id,
+		Source:    r.location,
+		Target:    graph.Empty.Node(),
+		Timestamp: r.tick,
+	}
+	// r.localWorld = worldReader.Observe(r.location)
 }
 func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node) common.Robot {
 	s := simpleWarehouseRobot{
@@ -76,6 +141,7 @@ func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node) common.Robo
 		location,
 		nil,
 		nil,
+		0,
 	}
 	return &s
 }
@@ -91,10 +157,11 @@ func (w *WarehouseWorld) GetGraph() graph.Graph {
 }
 
 func (w *WarehouseWorld) GetRobots() []common.Robot {
-	values := make([]common.Robot, len(w.robots))
+	values := []common.Robot{}
 	for _, value := range w.robots {
 		values = append(values, value)
 	}
+
 	return values
 }
 func (w *WarehouseWorld) GetTasks() []common.Task {
@@ -109,6 +176,13 @@ func (w *WarehouseWorld) ClaimTask(tid common.TaskID, rid common.RobotID) {
 	panic("not implemented")
 }
 
+//	1	- 	5	-	9
+//	|	X	|		|
+//	2	-	6		10
+//  	|		|		|
+//	3		7		11
+//	|		|		|
+//	4	- 	8 	-	12
 func CreateWarehouseWorld() *WarehouseWorld {
 
 	w := &WarehouseWorld{
@@ -153,6 +227,7 @@ func (w *WarehouseWorld) AddRobot(r common.Robot) bool {
 		// robot already in the track
 		return false
 	}
+	w.robots[r.ID()] = r
 	return true
 }
 func (w *WarehouseWorld) UpdateRobot(r common.Robot) bool {
@@ -165,39 +240,94 @@ func (w *WarehouseWorld) UpdateRobot(r common.Robot) bool {
 }
 
 type SimulatedTaskManager struct {
+	tasks   map[common.TaskID]common.Task
+	active  map[common.TaskID]common.Task
+	archive map[common.TaskID]common.Task
 }
 
 func CreateSimulatedTaskManager() *SimulatedTaskManager {
-	return &SimulatedTaskManager{}
+	return &SimulatedTaskManager{
+		make(map[common.TaskID]common.Task),
+		make(map[common.TaskID]common.Task),
+		make(map[common.TaskID]common.Task),
+	}
 }
 func (stm *SimulatedTaskManager) GetBroadcastInfo() interface{} {
 	panic("not implemented")
 }
 
 func (stm *SimulatedTaskManager) GetAllTasks() []common.Task {
-	panic("not implemented")
+	values := []common.Task{}
+	for _, t := range stm.tasks {
+		values = append(values, t)
+	}
+	return values
 }
 
 func (stm *SimulatedTaskManager) GetNext() common.Task {
-	panic("not implemented")
+	if len(stm.tasks) == 0 {
+		return nil
+	}
+	for _, v := range stm.tasks {
+		if v.GetStatus() != common.Assigned {
+			return v
+		}
+
+	}
+	return nil
 }
 
 func (stm *SimulatedTaskManager) GetTasks(n int) []common.Task {
-	panic("not implemented")
+	values := make([]common.Task, n)
+	for _, t := range stm.tasks {
+		n -= 1
+		values = append(values, t)
+		if n == 0 {
+			break
+		}
+	}
+	return values
 }
 
 func (stm *SimulatedTaskManager) TaskUpdate(taskID common.TaskID, status common.TaskStatus) error {
-	panic("not implemented")
+
+	if status == common.Completed {
+		stm.archive[taskID] = stm.tasks[taskID]
+		delete(stm.tasks, taskID)
+		return nil
+	} else if status == common.Assigned {
+		stm.active[taskID] = stm.tasks[taskID]
+		delete(stm.tasks, taskID)
+		return nil
+	} else {
+		return stm.tasks[taskID].UpdateStatus(status)
+	}
+
 }
 
 func (stm *SimulatedTaskManager) AddTask(t common.Task) bool {
-	panic("not implemented")
+	if t.GetStatus() == common.Completed {
+		return false
+	} else {
+		if _, ok := stm.tasks[t.GetTaskID()]; ok {
+			// task already in the tracker
+			// edge case, return false for now
+			return false
+		} else {
+			stm.tasks[t.GetTaskID()] = t
+			return true
+		}
+	}
 }
 
 func (stm *SimulatedTaskManager) AddTasks(tList []common.Task) bool {
-	panic("not implemented")
+	result := true
+	for _, t := range tList {
+		result = result && stm.AddTask(t)
+	}
+	return result
 }
 
 func (stm *SimulatedTaskManager) HasTasks() bool {
-	panic("not implemented")
+	return (0 != len(stm.tasks))
 }
