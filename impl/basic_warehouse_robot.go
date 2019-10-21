@@ -16,6 +16,7 @@ package impl
 import (
 	"log"
 	"maze/common"
+	"maze/common/action"
 
 	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph"
@@ -34,6 +35,7 @@ type simpleWarehouseRobot struct {
 	// path is the current planned path to deliver the task
 	path []graph.Node
 	tick int
+	act  action.Action
 }
 
 // ID returns the robot UUID
@@ -70,7 +72,7 @@ func (r *simpleWarehouseRobot) Location() graph.Node {
 // 	}
 // 	tMin := tasks[rand.Intn(len(tasks))]
 
-// 	pt, _ := path.BellmanFordFrom(r.Location(), w.GetGraph())
+// pt, _ := path.BellmanFordFrom(r.Location(), w.GetGraph())
 // 	p, _ := pt.To(tMin.GetDestination().ID())
 // 	r.path = p[1:]
 // 	r.task = tMin
@@ -82,69 +84,74 @@ func (r *simpleWarehouseRobot) Location() graph.Node {
 // 	}
 // }
 
+func PlanTaskAction(location common.Location, task common.Task) action.Action {
+	var start action.Action
+	var current action.Action
+	if location == task.GetOrigination() {
+		start = action.CreateBeginTaskACtion(location)
+		current = start
+	} else {
+		start = action.CreateMoveAction(location, task.GetDestination())
+		start.SetChild(action.CreateBeginTaskACtion(location))
+		current = start.GetChild()
+	}
+	current.SetChild(action.CreateMoveAction(task.GetOrigination(), task.GetDestination()))
+	current.GetChild().SetChild(action.CreateEndTaskAction(task.GetDestination()))
+	return start
+}
+
+func NextMove(graph simple.DirectedGraph, start graph.Node) graph.Node {
+	// path, ok =
+	return graph.From(start.ID()).Node()
+}
+
+func Execute(g graph.Graph, loc graph.Node, act action.Action) (graph.Node, action.Action) {
+	switch act.GetType() {
+	case action.Move:
+		move := act.GetContent().(*action.MoveAction)
+		if len(move.Path) > 0 {
+			n := move.Path[0]
+			move.Path = move.Path[1:]
+			return n, move
+		} else if len(move.Path) == 0 && move.GetStatus() == action.Pending {
+			pt, _ := path.BellmanFordFrom(move.Start, g)
+			p, _ := pt.To(move.End.ID())
+			n := move.Path[0]
+			move.Path = p[1:]
+			move.SetStatus(action.Active)
+			return n, move
+		} else {
+			move.SetStatus(action.End)
+			return loc, move.GetChild()
+		}
+	case action.StartTask:
+		return loc, act.GetChild()
+	case action.EndTask:
+		return loc, act.GetChild()
+	}
+	return g.Node(1), act
+}
+
 // Run is a function that can be run in a concurrent way
 func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common.Trace {
 	r.tick += 1
-	// return TaskMove(w, *r, r.tick)
-	if r.task == nil {
-		if tm.HasTasks() {
-			// there is at least a task to claim
-			(r.task) = tm.GetNext()
-			err := tm.TaskUpdate(r.task.GetTaskID(), common.Assigned)
-			if err != nil {
-				panic("Task Update Failed")
-			}
-			log.Printf("RObot %+v", r)
-			p, ok := path.BellmanFordFrom(r.Location(), w.GetGraph())
-
-			pt, _ := p.To(r.task.GetDestination().ID())
-			if !ok {
-				panic("No Path")
-			}
-			r.path = pt[1:]
-			return common.Trace{
-				RobotID:   r.ID(),
-				Source:    r.location,
-				Target:    r.task.GetDestination(),
-				Timestamp: r.tick,
-			}
-		}
-		// there is no task to do
-	} else if r.location == r.task.GetDestination() {
-		// at target location.
-		// unset task from robot
-		// update task to be done
-		err := tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
-
-		if err != nil {
-			panic("Failed to update task")
-		}
-		r.task = nil
-		return common.Trace{
-			RobotID:   r.id,
-			Source:    r.location,
-			Target:    graph.Empty.Node(),
-			Timestamp: r.tick,
-		}
-
-	} else {
-		// go to next location in path
-		r.location = r.path[0]
-		r.path = r.path[1:]
-		return common.Trace{
-			RobotID:   r.id,
-			Source:    r.location,
-			Target:    r.task.GetDestination(),
-			Timestamp: r.tick,
+	if r.act == nil {
+		if r.task == nil {
+			t := tm.GetNext()
+			tm.TaskUpdate(t.GetTaskID(), common.Assigned)
+			r.act = PlanTaskAction(r.location, t)
 		}
 	}
-	return common.Trace{
-		RobotID:   r.id,
+	n, act := Execute(w.GetGraph(), r.location, r.act)
+	r.act = act
+	trace := common.Trace{
+		RobotID:   r.ID(),
 		Source:    r.location,
-		Target:    graph.Empty.Node(),
+		Target:    n,
 		Timestamp: r.tick,
 	}
-
+	r.location = n
+	return trace
 	// r.localWorld = worldReader.Observe(r.location)
 }
 func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node) common.Robot {
@@ -154,6 +161,7 @@ func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node) common.Robo
 		nil,
 		nil,
 		0,
+		action.Null(),
 	}
 	return &s
 }

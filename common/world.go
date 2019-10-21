@@ -87,6 +87,8 @@ func CreateWorld(numRobots int, tm TaskManager) World {
 	return &w
 }
 
+type Location graph.Node
+
 // World interface defines the behavior of World simulation
 type World interface {
 	GetGraph() graph.Graph

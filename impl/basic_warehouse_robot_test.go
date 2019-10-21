@@ -14,8 +14,8 @@
 package impl
 
 import (
-	"log"
 	"maze/common"
+	"maze/common/action"
 	"reflect"
 	"testing"
 
@@ -182,7 +182,7 @@ func TestRobotClaimTask(t *testing.T) {
 		t.Error("Failed to claim task")
 	}
 }
-func TestSimultation(t *testing.T) {
+func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
 	w := CreateWarehouseWorld()
 	robots := w.GetRobots()
 	if len(robots) <= 0 {
@@ -197,8 +197,8 @@ func TestSimultation(t *testing.T) {
 	stm := CreateSimulatedTaskManager()
 	t1 := common.NewTimePriorityTask()
 	t2 := common.NewTimePriorityTask()
-	t1.Origin = w.graph.Node(2)
-	t2.Origin = w.graph.Node(2)
+	t1.Origin = w.graph.Node(1)
+	t2.Origin = w.graph.Node(1)
 	t1.Destination = w.graph.Node(6)
 	t2.Destination = w.graph.Node(5)
 	stm.AddTask(t1)
@@ -236,10 +236,10 @@ func TestSimultation(t *testing.T) {
 	}
 	// cycle to move to targets
 	for _, i := range robots {
-		log.Printf("%+v", i.Run(w, stm))
+		i.Run(w, stm)
 	}
 	for _, i := range robots {
-		log.Printf("%+v", i.Run(w, stm))
+		i.Run(w, stm)
 	}
 	if len(stm.GetAllTasks()) != 0 {
 		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
@@ -249,3 +249,103 @@ func TestSimultation(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestRobotGenerateActionPlan(t *testing.T) {
+	w := CreateWarehouseWorld()
+	r := w.GetRobots()[0]
+	// stm := CreateSimulatedTaskManager()
+	t1 := common.NewTimePriorityTask()
+	t1.Origin = w.graph.Node(2)
+	t1.Destination = w.graph.Node(6)
+	// stm.AddTask(t1)
+	if r.Location() != w.GetGraph().Node(1) {
+		t.Errorf("The location of the robot initialized is incorrect")
+		t.Fail()
+	}
+	act := PlanTaskAction(r.Location(), t1)
+	if act.GetType() != action.Move {
+		t.Errorf("First Generated Action sequence should be move, got %+v", act)
+		t.Fail()
+	}
+	act = act.GetChild()
+	if act.GetType() != action.StartTask {
+		t.Error("Action is expected to have child Begin After Move")
+		t.Fail()
+	}
+	act = act.GetChild()
+	if act.GetType() != action.Move {
+		t.Error("Action is expected to have child Move after Beging Action")
+	}
+	act = act.GetChild()
+	if act.GetType() != action.EndTask {
+		t.Error("Action is expected to have child End after move again")
+	}
+}
+
+// func TestRobotCanExecuteWithMoveInSimultation(t *testing.T) {
+// 	w := CreateWarehouseWorld()
+// 	robots := w.GetRobots()
+// 	if len(robots) <= 0 {
+// 		t.Error("Not enough robots")
+// 	}
+// 	for _, i := range robots {
+// 		if i.Location() == nil {
+// 			t.Errorf("Robot lication is nil")
+// 			t.FailNow()
+// 		}
+// 	}
+// 	stm := CreateSimulatedTaskManager()
+// 	t1 := common.NewTimePriorityTask()
+// 	t2 := common.NewTimePriorityTask()
+// 	t1.Origin = w.graph.Node(2)
+// 	t2.Origin = w.graph.Node(2)
+// 	t1.Destination = w.graph.Node(6)
+// 	t2.Destination = w.graph.Node(5)
+// 	stm.AddTask(t1)
+// 	stm.AddTask(t2)
+// 	// cycle to claim tasks
+// 	trace := []common.Trace{}
+// 	for _, i := range robots {
+// 		trace = append(trace, i.Run(w, stm))
+// 	}
+
+// 	if len(stm.GetAllTasks()) > 1 {
+// 		t.Errorf("Robot Failed to claim tasks")
+// 	}
+// 	tclaimed := false
+// 	for _, ts := range trace {
+// 		if ts.Target != nil && ts.Target.ID() == 6 {
+// 			tclaimed = true
+// 		}
+// 	}
+// 	if !tclaimed {
+// 		t.Error("Failed to emit trace of t1")
+// 	}
+// 	tclaimed = false
+// 	for _, ts := range trace {
+// 		if ts.Target != nil && ts.Target.ID() == 5 {
+// 			tclaimed = true
+// 		}
+// 	}
+// 	if !tclaimed {
+// 		t.Error("Failed to emit trace of t2")
+// 	}
+// 	if stm.ActiveCount() != 2 {
+// 		t.Errorf("Failed. Acive task count should be 2, yet received %d", stm.ActiveCount())
+// 		t.FailNow()
+// 	}
+// 	// cycle to move to targets
+// 	for _, i := range robots {
+// 		i.Run(w, stm)
+// 	}
+// 	for _, i := range robots {
+// 		i.Run(w, stm)
+// 	}
+// 	if len(stm.GetAllTasks()) != 0 {
+// 		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
+// 	}
+// 	if stm.FinishedCount() != 2 {
+// 		t.Errorf("Failed. Finished task count should be 2, yet received %d", stm.FinishedCount())
+// 		t.FailNow()
+// 	}
+// }
