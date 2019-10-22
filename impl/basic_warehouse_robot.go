@@ -14,6 +14,7 @@
 package impl
 
 import (
+	"errors"
 	"log"
 	"maze/common"
 	"maze/common/action"
@@ -84,19 +85,23 @@ func (r *simpleWarehouseRobot) Location() graph.Node {
 // 	}
 // }
 
-func PlanTaskAction(location common.Location, task common.Task) action.Action {
+func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) action.Action {
 	var start action.Action
 	var current action.Action
 	if location == task.GetOrigination() {
-		start = action.CreateBeginTaskACtion(location)
+		start = action.CreateBeginTaskAction(location)
 		current = start
 	} else {
-		start = action.CreateMoveAction(location, task.GetDestination())
-		start.SetChild(action.CreateBeginTaskACtion(location))
+		start = action.CreateMoveAction(location, task.GetOrigination())
+		start.(*action.MoveAction).Path, _ = GetPath(location, task.GetOrigination(), g)
+		start.SetChild(action.CreateBeginTaskAction(location))
 		current = start.GetChild()
 	}
-	current.SetChild(action.CreateMoveAction(task.GetOrigination(), task.GetDestination()))
+	p, _ := GetPath(task.GetOrigination(), task.GetDestination(), g)
+	current.SetChild(action.CreateMoveActionWithPath(task.GetOrigination(), task.GetDestination(), p))
 	current.GetChild().SetChild(action.CreateEndTaskAction(task.GetDestination()))
+	current.GetChild().GetChild().SetChild(action.Null())
+
 	return start
 }
 
@@ -107,41 +112,64 @@ func NextMove(graph simple.DirectedGraph, start graph.Node) graph.Node {
 
 func Execute(g graph.Graph, loc graph.Node, act action.Action) (graph.Node, action.Action) {
 	switch act.GetType() {
-	case action.Move:
-		move := act.GetContent().(*action.MoveAction)
+	case action.ActionTypeMove:
+		move := act.(*action.MoveAction)
+		move.SetStatus(action.ActiveStatus)
 		if len(move.Path) > 0 {
 			n := move.Path[0]
+
 			move.Path = move.Path[1:]
-			return n, move
-		} else if len(move.Path) == 0 && move.GetStatus() == action.Pending {
-			pt, _ := path.BellmanFordFrom(move.Start, g)
-			p, _ := pt.To(move.End.ID())
-			n := move.Path[0]
-			move.Path = p[1:]
-			move.SetStatus(action.Active)
-			return n, move
+			if len(move.Path) == 0 {
+				move.SetStatus(action.EndStatus)
+				act = move.GetChild()
+				return n, act
+			} else {
+				return n, move
+			}
 		} else {
-			move.SetStatus(action.End)
+			move.SetStatus(action.EndStatus)
 			return loc, move.GetChild()
 		}
-	case action.StartTask:
+	case action.ActionTypeStartTask:
 		return loc, act.GetChild()
-	case action.EndTask:
+	case action.ActionTypeEndTask:
 		return loc, act.GetChild()
 	}
-	return g.Node(1), act
+	return graph.Empty.Node(), act
+}
+func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
+	pt, ok := path.BellmanFordFrom(start, g)
+	if ok {
+		p, _ := pt.To(end.ID())
+
+		return p[1:], nil
+	} else {
+		return nil, errors.New("no positive cycle")
+	}
 }
 
 // Run is a function that can be run in a concurrent way
 func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common.Trace {
 	r.tick += 1
-	if r.act == nil {
+	if r.act.GetType() == action.ActionTypeNull {
+
 		if r.task == nil {
-			t := tm.GetNext()
-			tm.TaskUpdate(t.GetTaskID(), common.Assigned)
-			r.act = PlanTaskAction(r.location, t)
+			if tm.HasTasks() {
+				t := tm.GetNext()
+				err := tm.TaskUpdate(t.GetTaskID(), common.Assigned)
+				if err != nil {
+					panic("Failed to update task")
+				}
+				r.act = PlanTaskAction(w.GetGraph(), r.location, t)
+				r.task = t
+			}
 		}
 	}
+	if r.act.GetType() == action.ActionTypeEndTask {
+		tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
+		r.task = nil
+	}
+
 	n, act := Execute(w.GetGraph(), r.location, r.act)
 	r.act = act
 	trace := common.Trace{
@@ -349,7 +377,7 @@ func (stm *SimulatedTaskManager) AddTasks(tList []common.Task) bool {
 }
 
 func (stm *SimulatedTaskManager) HasTasks() bool {
-	return (0 != len(stm.tasks))
+	return len(stm.tasks) != 0
 }
 func (stm *SimulatedTaskManager) FinishedCount() int {
 	return len(stm.archive)

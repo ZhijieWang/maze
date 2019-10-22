@@ -157,9 +157,7 @@ func TestHasTasks(t *testing.T) {
 }
 
 func TestRobotClaimTask(t *testing.T) {
-
 	stm := CreateSimulatedTaskManager()
-
 	w := CreateWarehouseWorld()
 	t1 := common.NewTimePriorityTask()
 	t1.Origin = w.GetGraph().Node(1)
@@ -204,45 +202,23 @@ func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
 	stm.AddTask(t1)
 	stm.AddTask(t2)
 	// cycle to claim tasks
-	trace := []common.Trace{}
-	for _, i := range robots {
-		trace = append(trace, i.Run(w, stm))
-	}
 
+	for _, i := range robots {
+		i.Run(w, stm)
+	}
+	// t.Logf("Traces of first execution of run %+v", trace)
+	for _, i := range robots {
+		i.Run(w, stm)
+	}
+	// t.Logf("Traces of second execution of run %+v", trace)
 	if len(stm.GetAllTasks()) > 1 {
 		t.Errorf("Robot Failed to claim tasks")
 	}
-	tclaimed := false
-	for _, ts := range trace {
-		if ts.Target != nil && ts.Target.ID() == 6 {
-			tclaimed = true
-		}
-	}
-	if !tclaimed {
-		t.Error("Failed to emit trace of t1")
-	}
-	tclaimed = false
-	for _, ts := range trace {
-		if ts.Target != nil && ts.Target.ID() == 5 {
-			tclaimed = true
-		}
-	}
-	if !tclaimed {
-		t.Error("Failed to emit trace of t2")
-	}
-	if stm.ActiveCount() != 2 {
-		t.Errorf("Failed. Acive task count should be 2, yet received %d", stm.ActiveCount())
-		t.FailNow()
-	}
-	// cycle to move to targets
 	for _, i := range robots {
 		i.Run(w, stm)
 	}
 	for _, i := range robots {
 		i.Run(w, stm)
-	}
-	if len(stm.GetAllTasks()) != 0 {
-		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
 	}
 	if stm.FinishedCount() != 2 {
 		t.Errorf("Failed. Finished task count should be 2, yet received %d", stm.FinishedCount())
@@ -253,36 +229,132 @@ func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
 func TestRobotGenerateActionPlan(t *testing.T) {
 	w := CreateWarehouseWorld()
 	r := w.GetRobots()[0]
-	// stm := CreateSimulatedTaskManager()
+
 	t1 := common.NewTimePriorityTask()
 	t1.Origin = w.graph.Node(2)
 	t1.Destination = w.graph.Node(6)
-	// stm.AddTask(t1)
+
 	if r.Location() != w.GetGraph().Node(1) {
 		t.Errorf("The location of the robot initialized is incorrect")
 		t.Fail()
 	}
-	act := PlanTaskAction(r.Location(), t1)
-	if act.GetType() != action.Move {
-		t.Errorf("First Generated Action sequence should be move, got %+v", act)
+	act := PlanTaskAction(w.GetGraph(), r.Location(), t1)
+	if act.GetType() == action.ActionTypeMove && act.HasChild() && (act.(*action.MoveAction).Start == w.GetGraph().Node(1)) && (act.(*action.MoveAction).End == w.GetGraph().Node(2)) && len(act.(*action.MoveAction).Path) == 1 {
+
+	} else {
+		t.Errorf("First Generated Action sequence should be ActionTypeMove, got %+v", act)
 		t.Fail()
 	}
 	act = act.GetChild()
-	if act.GetType() != action.StartTask {
-		t.Error("Action is expected to have child Begin After Move")
+	if act.GetType() != action.ActionTypeStartTask {
+		t.Errorf("Action is expected to have child BeginTask, actual is %+v", act)
 		t.Fail()
 	}
 	act = act.GetChild()
-	if act.GetType() != action.Move {
-		t.Error("Action is expected to have child Move after Beging Action")
+	if act.GetType() == action.ActionTypeMove && act.(*action.MoveAction).Start == t1.GetOrigination() && act.(*action.MoveAction).End == t1.GetDestination() {
+
+	} else {
+		t.Errorf("Action is expected to have Move after Beging Action actual is %+v", act)
 	}
 	act = act.GetChild()
-	if act.GetType() != action.EndTask {
-		t.Error("Action is expected to have child End after move again")
+	if act.GetType() != action.ActionTypeEndTask {
+		t.Error("Action is expected to have child End aften.ActionTypeMove again")
+	}
+	act = act.GetChild()
+	if act.GetType() == action.ActionTypeNull {
+
+	} else {
+		t.Errorf("Action is set to null for robot to be idle.")
+	}
+}
+func TestRobotCanExecuteTaskPlan(t *testing.T) {
+	w := CreateWarehouseWorld()
+	r := w.GetRobots()[0]
+	t1 := common.NewTimePriorityTask()
+	t1.Origin = w.graph.Node(2)
+	t1.Destination = w.graph.Node(6)
+	if r.Location() != w.GetGraph().Node(1) {
+		t.Errorf("The location of the robot initialized is incorrect")
+		t.Fail()
+	}
+	// targetAct := action.CreateMoveAction(w.GetGraph().Node(1), w.GetGraph().Node(2))
+
+	act := PlanTaskAction(w.GetGraph(), r.Location(), t1)
+
+	node, act := Execute(w.GetGraph(), r.Location(), act)
+
+	if node == t1.Origin && act.GetType() == action.ActionTypeStartTask {
+
+	} else {
+		t.Errorf("target should be the task start location, actual target is %+v", node)
+	}
+	node, act = Execute(w.GetGraph(), node, act)
+	if node == t1.GetOrigination() && act.GetType() == action.ActionTypeMove && act.(*action.MoveAction).End == t1.GetDestination() {
+
+	} else {
+		t.Errorf("Failed to prepare for next step of move after begin task")
 	}
 }
 
-// func TestRobotCanExecuteWithMoveInSimultation(t *testing.T) {
+func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
+	w := CreateWarehouseWorld()
+	r := w.GetRobots()[0].(*simpleWarehouseRobot)
+	stm := CreateSimulatedTaskManager()
+	t1 := common.NewTimePriorityTask()
+	t1.Origin = w.graph.Node(2)
+	t1.Destination = w.graph.Node(6)
+	stm.AddTask(t1)
+	trace := r.Run(w, stm)
+
+	if trace.Source == w.GetGraph().Node(1) && trace.Target == w.GetGraph().Node(2) {
+		// Move one step
+	} else {
+		t.Errorf("First step should be moving from 1 to 2, actual trace is %+v", trace)
+		t.Fail()
+	}
+	if r.act.GetType() == action.ActionTypeStartTask {
+		// a Move, the action next should be beging task
+	} else {
+		t.Errorf("After 1 step move, the next pending task should be begin task, but actual is %v : %+v", r.act.GetType(), r.act)
+		t.Fail()
+	}
+	trace = r.Run(w, stm)
+
+	if trace.Source == t1.GetOrigination() && trace.Target == t1.GetOrigination() {
+		// execute beging task action, stay at the source node
+	} else {
+		t.Errorf("Exepct this step to perform begin task step. Which remains at the task start position")
+		t.Fail()
+	}
+	if r.act.GetType() == action.ActionTypeMove && r.act.(*action.MoveAction).End == t1.GetDestination() {
+	} else {
+		t.Errorf("Expect next step move to target location after execute beging action.\n What is the actual action? %+v", r.act)
+	}
+	trace = r.Run(w, stm)
+	if trace.Source == t1.GetOrigination() && trace.Target == t1.GetDestination() {
+
+	} else {
+		t.Errorf("Should move to final destination with execution. What actual move was %+v", trace)
+	}
+	if r.act.GetType() == action.ActionTypeEndTask {
+		// next should end execution
+	} else {
+		t.Errorf("Should plan to end the task execution")
+	}
+	trace = r.Run(w, stm)
+	if trace.Source == t1.GetDestination() && trace.Target == t1.GetDestination() {
+		// wrap up task
+	} else {
+		t.Errorf("Execte end task ")
+	}
+	if r.act == action.Null() {
+		// Should be nothing left
+	} else {
+		t.Errorf("Should release the robot to idle. Actual: %+v", r.act)
+	}
+}
+
+// func TestRobotCanExecuteWin.ActionTypeMoveInSimultation(t *testing.T) {
 // 	w := CreateWarehouseWorld()
 // 	robots := w.GetRobots()
 // 	if len(robots) <= 0 {
@@ -334,7 +406,7 @@ func TestRobotGenerateActionPlan(t *testing.T) {
 // 		t.Errorf("Failed. Acive task count should be 2, yet received %d", stm.ActiveCount())
 // 		t.FailNow()
 // 	}
-// 	// cycle to move to targets
+// 	// cycle tn.ActionTypeMove to targets
 // 	for _, i := range robots {
 // 		i.Run(w, stm)
 // 	}
