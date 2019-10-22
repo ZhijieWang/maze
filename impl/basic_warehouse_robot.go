@@ -110,10 +110,11 @@ func NextMove(graph simple.DirectedGraph, start graph.Node) graph.Node {
 	return graph.From(start.ID()).Node()
 }
 
-func Execute(g graph.Graph, loc graph.Node, act action.Action) (graph.Node, action.Action) {
-	switch act.GetType() {
+func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (graph.Node, action.Action) {
+
+	switch r.act.GetType() {
 	case action.ActionTypeMove:
-		move := act.(*action.MoveAction)
+		move := r.act.(*action.MoveAction)
 		move.SetStatus(action.ActiveStatus)
 		if len(move.Path) > 0 {
 			n := move.Path[0]
@@ -121,21 +122,28 @@ func Execute(g graph.Graph, loc graph.Node, act action.Action) (graph.Node, acti
 			move.Path = move.Path[1:]
 			if len(move.Path) == 0 {
 				move.SetStatus(action.EndStatus)
-				act = move.GetChild()
-				return n, act
+				r.act = move.GetChild()
+				return n, r.act
 			} else {
 				return n, move
 			}
 		} else {
 			move.SetStatus(action.EndStatus)
-			return loc, move.GetChild()
+			return r.location, move.GetChild()
 		}
 	case action.ActionTypeStartTask:
-		return loc, act.GetChild()
+
+		tm.TaskUpdate(r.task.GetTaskID(), common.Assigned)
+
+		return r.location, r.act.GetChild()
 	case action.ActionTypeEndTask:
-		return loc, act.GetChild()
+		tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
+		r.task = nil
+		return r.location, r.act.GetChild()
+	case action.ActionTypeNull:
+		return graph.Empty.Node(), r.act
 	}
-	return graph.Empty.Node(), act
+	return graph.Empty.Node(), r.act
 }
 func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
 	pt, ok := path.BellmanFordFrom(start, g)
@@ -165,12 +173,8 @@ func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common
 			}
 		}
 	}
-	if r.act.GetType() == action.ActionTypeEndTask {
-		tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
-		r.task = nil
-	}
 
-	n, act := Execute(w.GetGraph(), r.location, r.act)
+	n, act := r.Execute(w.GetGraph(), tm)
 	r.act = act
 	trace := common.Trace{
 		RobotID:   r.ID(),

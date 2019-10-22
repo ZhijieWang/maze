@@ -206,11 +206,9 @@ func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
 	for _, i := range robots {
 		i.Run(w, stm)
 	}
-	// t.Logf("Traces of first execution of run %+v", trace)
 	for _, i := range robots {
 		i.Run(w, stm)
 	}
-	// t.Logf("Traces of second execution of run %+v", trace)
 	if len(stm.GetAllTasks()) > 1 {
 		t.Errorf("Robot Failed to claim tasks")
 	}
@@ -270,9 +268,11 @@ func TestRobotGenerateActionPlan(t *testing.T) {
 func TestRobotCanExecuteTaskPlan(t *testing.T) {
 	w := CreateWarehouseWorld()
 	r := w.GetRobots()[0]
+	stm := CreateSimulatedTaskManager()
 	t1 := common.NewTimePriorityTask()
 	t1.Origin = w.graph.Node(2)
 	t1.Destination = w.graph.Node(6)
+	stm.AddTask(t1)
 	if r.Location() != w.GetGraph().Node(1) {
 		t.Errorf("The location of the robot initialized is incorrect")
 		t.Fail()
@@ -280,15 +280,18 @@ func TestRobotCanExecuteTaskPlan(t *testing.T) {
 	// targetAct := action.CreateMoveAction(w.GetGraph().Node(1), w.GetGraph().Node(2))
 
 	act := PlanTaskAction(w.GetGraph(), r.Location(), t1)
-
-	node, act := Execute(w.GetGraph(), r.Location(), act)
+	r.(*simpleWarehouseRobot).act = act
+	r.(*simpleWarehouseRobot).task = t1
+	node, act := r.(*simpleWarehouseRobot).Execute(w.GetGraph(), stm)
 
 	if node == t1.Origin && act.GetType() == action.ActionTypeStartTask {
 
 	} else {
 		t.Errorf("target should be the task start location, actual target is %+v", node)
 	}
-	node, act = Execute(w.GetGraph(), node, act)
+	r.(*simpleWarehouseRobot).act = act
+	r.(*simpleWarehouseRobot).location = node
+	node, act = r.(*simpleWarehouseRobot).Execute(w.GetGraph(), stm)
 	if node == t1.GetOrigination() && act.GetType() == action.ActionTypeMove && act.(*action.MoveAction).End == t1.GetDestination() {
 
 	} else {
@@ -354,70 +357,73 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	}
 }
 
-// func TestRobotCanExecuteWin.ActionTypeMoveInSimultation(t *testing.T) {
-// 	w := CreateWarehouseWorld()
-// 	robots := w.GetRobots()
-// 	if len(robots) <= 0 {
-// 		t.Error("Not enough robots")
-// 	}
-// 	for _, i := range robots {
-// 		if i.Location() == nil {
-// 			t.Errorf("Robot lication is nil")
-// 			t.FailNow()
-// 		}
-// 	}
-// 	stm := CreateSimulatedTaskManager()
-// 	t1 := common.NewTimePriorityTask()
-// 	t2 := common.NewTimePriorityTask()
-// 	t1.Origin = w.graph.Node(2)
-// 	t2.Origin = w.graph.Node(2)
-// 	t1.Destination = w.graph.Node(6)
-// 	t2.Destination = w.graph.Node(5)
-// 	stm.AddTask(t1)
-// 	stm.AddTask(t2)
-// 	// cycle to claim tasks
-// 	trace := []common.Trace{}
-// 	for _, i := range robots {
-// 		trace = append(trace, i.Run(w, stm))
-// 	}
+func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
+	w := CreateWarehouseWorld()
+	robots := w.GetRobots()
+	if len(robots) <= 0 {
+		t.Error("Not enough robots")
+	}
+	for _, i := range robots {
+		if i.Location() == nil {
+			t.Errorf("Robot lication is nil")
+			t.FailNow()
+		}
+	}
+	stm := CreateSimulatedTaskManager()
+	t1 := common.NewTimePriorityTask()
+	t2 := common.NewTimePriorityTask()
+	t1.Origin = w.graph.Node(2)
+	t2.Origin = w.graph.Node(2)
+	t1.Destination = w.graph.Node(6)
+	t2.Destination = w.graph.Node(5)
+	stm.AddTask(t1)
+	stm.AddTask(t2)
+	// cycle to claim tasks
+	trace := []common.Trace{}
+	for _, i := range robots {
+		trace = append(trace, i.Run(w, stm))
+	}
 
-// 	if len(stm.GetAllTasks()) > 1 {
-// 		t.Errorf("Robot Failed to claim tasks")
-// 	}
-// 	tclaimed := false
-// 	for _, ts := range trace {
-// 		if ts.Target != nil && ts.Target.ID() == 6 {
-// 			tclaimed = true
-// 		}
-// 	}
-// 	if !tclaimed {
-// 		t.Error("Failed to emit trace of t1")
-// 	}
-// 	tclaimed = false
-// 	for _, ts := range trace {
-// 		if ts.Target != nil && ts.Target.ID() == 5 {
-// 			tclaimed = true
-// 		}
-// 	}
-// 	if !tclaimed {
-// 		t.Error("Failed to emit trace of t2")
-// 	}
-// 	if stm.ActiveCount() != 2 {
-// 		t.Errorf("Failed. Acive task count should be 2, yet received %d", stm.ActiveCount())
-// 		t.FailNow()
-// 	}
-// 	// cycle tn.ActionTypeMove to targets
-// 	for _, i := range robots {
-// 		i.Run(w, stm)
-// 	}
-// 	for _, i := range robots {
-// 		i.Run(w, stm)
-// 	}
-// 	if len(stm.GetAllTasks()) != 0 {
-// 		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
-// 	}
-// 	if stm.FinishedCount() != 2 {
-// 		t.Errorf("Failed. Finished task count should be 2, yet received %d", stm.FinishedCount())
-// 		t.FailNow()
-// 	}
-// }
+	if len(stm.GetAllTasks()) > 1 {
+		t.Errorf("Robot Failed to claim tasks")
+	}
+	tclaimed := false
+	for _, ts := range trace {
+		if ts.Target != nil && ts.Target == t1.GetOrigination() {
+			tclaimed = true
+		}
+	}
+	if !tclaimed {
+		t.Error("Failed to emit trace of t1")
+	}
+	tclaimed = false
+	for _, ts := range trace {
+		if ts.Target != nil && ts.Target == t2.GetOrigination() {
+			tclaimed = true
+		}
+	}
+	if !tclaimed {
+		t.Error("Failed to emit trace of t2")
+	}
+	if stm.ActiveCount() != 2 {
+		t.Errorf("Failed. Acive task count should be 2, yet received %d", stm.ActiveCount())
+		t.FailNow()
+	}
+	// cycle tn.ActionTypeMove to targets
+	for _, i := range robots {
+		i.Run(w, stm)
+	}
+	for _, i := range robots {
+		i.Run(w, stm)
+	}
+	for _, i := range robots {
+		i.Run(w, stm)
+	}
+	if len(stm.GetAllTasks()) != 0 {
+		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
+	}
+	if stm.FinishedCount() != 2 {
+		t.Errorf("Failed. Finished task count should be 2, yet received %d", stm.FinishedCount())
+		t.FailNow()
+	}
+}
