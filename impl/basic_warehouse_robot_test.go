@@ -375,7 +375,7 @@ func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
 	t1.Origin = w.graph.Node(2)
 	t2.Origin = w.graph.Node(2)
 	t1.Destination = w.graph.Node(6)
-	t2.Destination = w.graph.Node(5)
+	t2.Destination = w.graph.Node(9)
 	stm.AddTask(t1)
 	stm.AddTask(t2)
 	// cycle to claim tasks
@@ -410,6 +410,9 @@ func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
 		t.FailNow()
 	}
 	// cycle tn.ActionTypeMove to targets
+	for _, i := range robots {
+		i.Run(w, stm)
+	}
 	for _, i := range robots {
 		i.Run(w, stm)
 	}

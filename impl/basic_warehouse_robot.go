@@ -123,27 +123,31 @@ func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (gr
 			if len(move.Path) == 0 {
 				move.SetStatus(action.EndStatus)
 				r.act = move.GetChild()
-				return n, r.act
+				r.location = n
 			} else {
-				return n, move
+				r.location = n
+				r.act = move
 			}
 		} else {
 			move.SetStatus(action.EndStatus)
-			return r.location, move.GetChild()
+			r.act = r.act.GetChild()
 		}
 	case action.ActionTypeStartTask:
-
 		tm.TaskUpdate(r.task.GetTaskID(), common.Assigned)
-
-		return r.location, r.act.GetChild()
+		r.act = r.act.GetChild()
 	case action.ActionTypeEndTask:
+		// mark task complete and remove self task
 		tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
 		r.task = nil
-		return r.location, r.act.GetChild()
+		r.act = r.act.GetChild()
 	case action.ActionTypeNull:
-		return graph.Empty.Node(), r.act
+		// choose to remain on the same location, no move.
+		return r.Location(), r.act
+	default:
+		// do nothing
+
 	}
-	return graph.Empty.Node(), r.act
+	return r.location, r.act
 }
 func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
 	pt, ok := path.BellmanFordFrom(start, g)
@@ -158,9 +162,9 @@ func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
 
 // Run is a function that can be run in a concurrent way
 func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common.Trace {
+	source := r.location
 	r.tick += 1
 	if r.act.GetType() == action.ActionTypeNull {
-
 		if r.task == nil {
 			if tm.HasTasks() {
 				t := tm.GetNext()
@@ -178,8 +182,8 @@ func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common
 	r.act = act
 	trace := common.Trace{
 		RobotID:   r.ID(),
-		Source:    r.location,
-		Target:    n,
+		Source:    source,
+		Target:    r.Location(),
 		Timestamp: r.tick,
 	}
 	r.location = n
