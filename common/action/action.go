@@ -9,21 +9,18 @@ import (
 type ActionType int
 
 const (
-	Pending = iota
-	Active
-	End
+	PendingStatus = iota
+	ActiveStatus
+	EndStatus
 )
 
 type ActionStatus int
 
 const (
-	Move = iota
-	StartTask
-	EndTask
-	Act
-	Pause
-	CustomAction
-	NullType
+	ActionTypeMove = iota
+	ActionTypeStartTask
+	ActionTypeEndTask
+	ActionTypeNull
 )
 
 type Action interface {
@@ -51,7 +48,7 @@ func (a *MoveAction) GetChild() Action {
 	return a.child
 }
 func (a *MoveAction) GetType() ActionType {
-	return Move
+	return ActionTypeMove
 }
 func (a *MoveAction) HasChild() bool {
 	return a.child != nil
@@ -63,7 +60,10 @@ func (a *MoveAction) GetContent() interface{} {
 	return a
 }
 func CreateMoveAction(start common.Location, end common.Location) *MoveAction {
-	return &MoveAction{nil, start, end, nil, Pending}
+	return &MoveAction{nil, start, end, nil, PendingStatus}
+}
+func CreateMoveActionWithPath(start, end common.Location, path []graph.Node) *MoveAction {
+	return &MoveAction{nil, start, end, path, PendingStatus}
 }
 func (a *MoveAction) GetStatus() ActionStatus {
 	return a.status
@@ -81,14 +81,14 @@ type BeginTaskAction struct {
 	here  common.Location
 }
 
-func CreateBeginTaskACtion(here common.Location) *BeginTaskAction {
+func CreateBeginTaskAction(here common.Location) *BeginTaskAction {
 	return &BeginTaskAction{nil, here}
 }
 func (a *BeginTaskAction) GetChild() Action {
 	return a.child
 }
 func (a *BeginTaskAction) GetType() ActionType {
-	return StartTask
+	return ActionTypeStartTask
 }
 func (a *BeginTaskAction) HasChild() bool {
 	return a.child != nil
@@ -105,23 +105,23 @@ type EndTaskAction struct {
 	here  common.Location
 }
 
-func (a EndTaskAction) GetChild() Action {
+func (a *EndTaskAction) GetChild() Action {
 	return a.child
 }
-func (a EndTaskAction) GetType() ActionType {
-	return EndTask
+func (a *EndTaskAction) GetType() ActionType {
+	return ActionTypeEndTask
 }
-func (a EndTaskAction) HasChild() bool {
+func (a *EndTaskAction) HasChild() bool {
 	return a.child != nil
 }
-func (a EndTaskAction) GetContent() interface{} {
+func (a *EndTaskAction) GetContent() interface{} {
 	return &a
 }
-func (a EndTaskAction) SetChild(c Action) {
+func (a *EndTaskAction) SetChild(c Action) {
 	a.child = c
 }
-func CreateEndTaskAction(here common.Location) EndTaskAction {
-	return EndTaskAction{nil, here}
+func CreateEndTaskAction(here common.Location) *EndTaskAction {
+	return &EndTaskAction{nil, here}
 }
 
 type NullAction struct {
@@ -131,7 +131,7 @@ func (n NullAction) GetChild() Action {
 	return n
 }
 func (n NullAction) GetType() ActionType {
-	return NullType
+	return ActionTypeNull
 }
 
 func (n NullAction) HasChild() bool {
