@@ -84,6 +84,9 @@ func (r *simpleWarehouseRobot) Location() graph.Node {
 // 		Timestamp: t,
 // 	}
 // }
+func (r *simpleWarehouseRobot) Plan(g graph.Graph) {
+	r.act = PlanTaskAction(g, r.Location(), r.task)
+}
 
 func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) action.Action {
 	var start action.Action

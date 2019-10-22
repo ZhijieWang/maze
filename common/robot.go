@@ -14,6 +14,8 @@
 package common
 
 import (
+	"maze/common/action"
+
 	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph"
 )
@@ -24,6 +26,8 @@ type Robot interface {
 	ID() RobotID
 	Run(w World, tm TaskManager) Trace
 	Location() graph.Node
+	Plan(graph.Graph)
+	Execute(graph.Graph, TaskManager) (graph.Node, action.Action)
 }
 
 // SimpleRobot is a data holder struct for robot
@@ -78,4 +82,11 @@ func NewSimpleRobot(id RobotID, location graph.Node) Robot {
 		nil,
 	}
 	return &s
+}
+
+func (r *simpleRobot) Plan(g graph.Graph) {
+
+}
+func (r *simpleRobot) Execute(g graph.Graph, tm TaskManager) (graph.Node, action.Action) {
+	return r.Location(), action.Null()
 }
