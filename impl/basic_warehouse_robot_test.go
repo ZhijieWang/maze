@@ -429,6 +429,3 @@ func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
 		t.FailNow()
 	}
 }
-func TestRobotOnlyMakeLegalMoves(t *testing.T) {
-
-}

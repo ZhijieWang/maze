@@ -2,8 +2,8 @@ Personal practice to develop a distributed system of bunch of robots moving arou
 
 Sept 5 2018 -- 
 Started diving in without much of design. Originally separates out to several components. Robot, Task/TaskManager and World. Using World as the point of entry.
-Then run into a problem -- if the system is trully distributed, how much context/state does each robot maintains on its own.
-Trying to solve the problem of state maintainance, I started passng pointers around and have wait locks on central world states. The system is somehow much slower. commit 574ab.
+Then run into a problem -- if the system is truly distributed, how much context/state does each robot maintains on its own.
+Trying to solve the problem of state maintenance, I started passing pointers around and have wait locks on central world states. The system is somehow much slower. commit 574ab.
 Each Robot execute in an GoRoutine concurrently.
 
 Sept 21 2018 --
@@ -18,28 +18,31 @@ Sept 24 - Ocr 1 2019
 
 Improve interface design. Trying to finish from previous work. Did some research. Other similar system are designed in stacks. Membership maintenance, state synchronization etc are in a different stack layer from main application. 
 
-Started implementing a driving component called simuation that drives and maintains system starts and end. Let Robot be the one doing the bulk load, localize a copy of world state. Using driver to maintain the state synchronization in a centralized fashion.
+Started implementing a driving component called simulation that drives and maintains system starts and end. Let Robot be the one doing the bulk load, localize a copy of world state. Using driver to maintain the state synchronization in a centralized fashion.
 
 
 Oct 14 2019
 
-After first set of tests pass, reviewed the code. The interganbled pieces are due to trying to design interface and implementing basic objects fulfilling the interface -- making tests difficult. To ensure the interface is correct, test implementations should be implemented in test packages. This allows functions in test packages to introspect object states (Simulate), and some Basic Implementations could stay with the Interface package, like World, to avoid repetitive code (technically, for more robust testing, each test case should implement its own depended sub objects/interface) .
+After first set of tests pass, reviewed the code. The intermingled pieces are due to trying to design interface and implementing basic objects fulfilling the interface -- making tests difficult. To ensure the interface is correct, test implementations should be implemented in test packages. This allows functions in test packages to introspect object states (Simulate), and some Basic Implementations could stay with the Interface package, like World, to avoid repetitive code (technically, for more robust testing, each test case should implement its own depended sub objects/interface) .
 
 Oct 17 2019
 Some basic simulation was run. Realized some limitation in existing Application stack interface. Start implement usecase further to identify limitation of the interface.
 
 
+Oct 24 2019 
+Implemented basic action graph generation and execution. With sufficient tests to pass as first implementation.
+Fixed some minot code import cycles to make sure the build pass.
 
-A typical client and server model will require a sever, which server as many functionalities:
+A typical client and server model will require a sever, which server as many functionality:
 1. Name discovery
-2. Syncrhonization and message bus
+2. Synchronization and message bus
 3. Orchestration
 
 
-Drawbacks -- not fast enough and not scalable to millons of comples requests.
+Drawbacks -- not fast enough and not scalable to millions of complex requests.
 
-Tiered approach like MVC (model view controller, and throw the persistency to database) allows data passing in sequential orders (best).
-Drawbacks -- still not so scallable, when syncrhonization is needed.
+Tiered approach like MVC (model view controller, and throw the persistence to database) allows data passing in sequential orders (best).
+Drawbacks -- still not so scalable, when synchronization is needed.
 
 Pure message passing based solution (distributed micro-services /Actor systems) with proper message design.
 Drawbacks -- super pain in the neck to debug, stuck in message loops.
