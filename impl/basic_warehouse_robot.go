@@ -331,7 +331,7 @@ func (stm *SimulatedTaskManager) TaskUpdate(taskID common.TaskID, status common.
 			delete(stm.tasks, taskID)
 			return nil
 		} else {
-			return errors.New("task no found")
+			return errors.New("task not found")
 		}
 
 	default:

@@ -30,22 +30,15 @@ type System struct {
 type ActorRef struct {
 	comm    chan interface{}
 	robot   *simpleWarehouseRobot
-	counter int
 }
 
 func (actor *ActorRef) Run() {
 
 	go func() {
 		for {
-
 			select {
 			default:
-				//log.Printf("%+v", actor.robot.Run())
 				actor.robot.Run()
-				actor.counter += 1
-				if actor.counter >= 20 {
-					break
-				}
 			case <-actor.comm:
 				break
 			}
@@ -67,7 +60,7 @@ func (s *System) Init() {
 }
 func (s *System) Start() {
 
-	s.refs = append(s.refs, &ActorRef{make(chan interface{}), NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w, s.stm), 0})
+	s.refs = append(s.refs, &ActorRef{make(chan interface{}), NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w, s.stm)})
 	for _, i := range s.refs {
 		i.Init()
 	}
