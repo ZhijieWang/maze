@@ -17,7 +17,6 @@ import (
 	"errors"
 	"log"
 	"maze/common"
-	"maze/common/action"
 
 	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph"
@@ -36,7 +35,7 @@ type simpleWarehouseRobot struct {
 	// path is the current planned path to deliver the task
 	path []graph.Node
 	tick int
-	act  action.Action
+	act  common.Action
 }
 
 // ID returns the robot UUID
@@ -88,22 +87,22 @@ func (r *simpleWarehouseRobot) Plan(g graph.Graph) {
 	r.act = PlanTaskAction(g, r.Location(), r.task)
 }
 
-func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) action.Action {
-	var start action.Action
-	var current action.Action
+func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) common.Action {
+	var start common.Action
+	var current common.Action
 	if location == task.GetOrigination() {
-		start = action.CreateBeginTaskAction(location)
+		start = common.CreateBeginTaskAction(location)
 		current = start
 	} else {
-		start = action.CreateMoveAction(location, task.GetOrigination())
-		start.(*action.MoveAction).Path, _ = GetPath(location, task.GetOrigination(), g)
-		start.SetChild(action.CreateBeginTaskAction(location))
+		start = common.CreateMoveAction(location, task.GetOrigination())
+		start.(*common.MoveAction).Path, _ = GetPath(location, task.GetOrigination(), g)
+		start.SetChild(common.CreateBeginTaskAction(location))
 		current = start.GetChild()
 	}
 	p, _ := GetPath(task.GetOrigination(), task.GetDestination(), g)
-	current.SetChild(action.CreateMoveActionWithPath(task.GetOrigination(), task.GetDestination(), p))
-	current.GetChild().SetChild(action.CreateEndTaskAction(task.GetDestination()))
-	current.GetChild().GetChild().SetChild(action.Null())
+	current.SetChild(common.CreateMoveActionWithPath(task.GetOrigination(), task.GetDestination(), p))
+	current.GetChild().SetChild(common.CreateEndTaskAction(task.GetDestination()))
+	current.GetChild().GetChild().SetChild(common.Null())
 
 	return start
 }
@@ -113,18 +112,18 @@ func NextMove(graph simple.DirectedGraph, start graph.Node) graph.Node {
 	return graph.From(start.ID()).Node()
 }
 
-func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (graph.Node, action.Action) {
+func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (graph.Node, common.Action) {
 
 	switch r.act.GetType() {
-	case action.ActionTypeMove:
-		move := r.act.(*action.MoveAction)
-		move.SetStatus(action.ActiveStatus)
+	case common.ActionTypeMove:
+		move := r.act.(*common.MoveAction)
+		move.SetStatus(common.ActiveStatus)
 		if len(move.Path) > 0 {
 			n := move.Path[0]
 
 			move.Path = move.Path[1:]
 			if len(move.Path) == 0 {
-				move.SetStatus(action.EndStatus)
+				move.SetStatus(common.EndStatus)
 				r.act = move.GetChild()
 				r.location = n
 			} else {
@@ -132,18 +131,18 @@ func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (gr
 				r.act = move
 			}
 		} else {
-			move.SetStatus(action.EndStatus)
+			move.SetStatus(common.EndStatus)
 			r.act = r.act.GetChild()
 		}
-	case action.ActionTypeStartTask:
+	case common.ActionTypeStartTask:
 		tm.TaskUpdate(r.task.GetTaskID(), common.Assigned)
 		r.act = r.act.GetChild()
-	case action.ActionTypeEndTask:
+	case common.ActionTypeEndTask:
 		// mark task complete and remove self task
 		tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
 		r.task = nil
 		r.act = r.act.GetChild()
-	case action.ActionTypeNull:
+	case common.ActionTypeNull:
 		// choose to remain on the same location, no move.
 		return r.Location(), r.act
 	default:
@@ -167,7 +166,7 @@ func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
 func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common.Trace {
 	source := r.location
 	r.tick += 1
-	if r.act.GetType() == action.ActionTypeNull {
+	if r.act.GetType() == common.ActionTypeNull {
 		if r.task == nil {
 			if tm.HasTasks() {
 				t := tm.GetNext()
@@ -200,7 +199,7 @@ func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node) common.Robo
 		nil,
 		nil,
 		0,
-		action.Null(),
+		common.Null(),
 	}
 	return &s
 }

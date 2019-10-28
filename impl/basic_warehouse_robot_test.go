@@ -15,7 +15,6 @@ package impl
 
 import (
 	"maze/common"
-	"maze/common/action"
 	"reflect"
 	"testing"
 
@@ -237,29 +236,29 @@ func TestRobotGenerateActionPlan(t *testing.T) {
 		t.Fail()
 	}
 	act := PlanTaskAction(w.GetGraph(), r.Location(), t1)
-	if act.GetType() == action.ActionTypeMove && act.HasChild() && (act.(*action.MoveAction).Start == w.GetGraph().Node(1)) && (act.(*action.MoveAction).End == w.GetGraph().Node(2)) && len(act.(*action.MoveAction).Path) == 1 {
+	if act.GetType() == common.ActionTypeMove && act.HasChild() && (act.(*common.MoveAction).Start == w.GetGraph().Node(1)) && (act.(*common.MoveAction).End == w.GetGraph().Node(2)) && len(act.(*common.MoveAction).Path) == 1 {
 
 	} else {
 		t.Errorf("First Generated Action sequence should be ActionTypeMove, got %+v", act)
 		t.Fail()
 	}
 	act = act.GetChild()
-	if act.GetType() != action.ActionTypeStartTask {
+	if act.GetType() != common.ActionTypeStartTask {
 		t.Errorf("Action is expected to have child BeginTask, actual is %+v", act)
 		t.Fail()
 	}
 	act = act.GetChild()
-	if act.GetType() == action.ActionTypeMove && act.(*action.MoveAction).Start == t1.GetOrigination() && act.(*action.MoveAction).End == t1.GetDestination() {
+	if act.GetType() == common.ActionTypeMove && act.(*common.MoveAction).Start == t1.GetOrigination() && act.(*common.MoveAction).End == t1.GetDestination() {
 
 	} else {
 		t.Errorf("Action is expected to have Move after Beging Action actual is %+v", act)
 	}
 	act = act.GetChild()
-	if act.GetType() != action.ActionTypeEndTask {
+	if act.GetType() != common.ActionTypeEndTask {
 		t.Error("Action is expected to have child End aften.ActionTypeMove again")
 	}
 	act = act.GetChild()
-	if act.GetType() == action.ActionTypeNull {
+	if act.GetType() == common.ActionTypeNull {
 
 	} else {
 		t.Errorf("Action is set to null for robot to be idle.")
@@ -284,7 +283,7 @@ func TestRobotCanExecuteTaskPlan(t *testing.T) {
 	r.(*simpleWarehouseRobot).task = t1
 	node, act := r.(*simpleWarehouseRobot).Execute(w.GetGraph(), stm)
 
-	if node == t1.Origin && act.GetType() == action.ActionTypeStartTask {
+	if node == t1.Origin && act.GetType() == common.ActionTypeStartTask {
 
 	} else {
 		t.Errorf("target should be the task start location, actual target is %+v", node)
@@ -292,7 +291,7 @@ func TestRobotCanExecuteTaskPlan(t *testing.T) {
 	r.(*simpleWarehouseRobot).act = act
 	r.(*simpleWarehouseRobot).location = node
 	node, act = r.(*simpleWarehouseRobot).Execute(w.GetGraph(), stm)
-	if node == t1.GetOrigination() && act.GetType() == action.ActionTypeMove && act.(*action.MoveAction).End == t1.GetDestination() {
+	if node == t1.GetOrigination() && act.GetType() == common.ActionTypeMove && act.(*common.MoveAction).End == t1.GetDestination() {
 
 	} else {
 		t.Errorf("Failed to prepare for next step of move after begin task")
@@ -315,7 +314,7 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 		t.Errorf("First step should be moving from 1 to 2, actual trace is %+v", trace)
 		t.Fail()
 	}
-	if r.act.GetType() == action.ActionTypeStartTask {
+	if r.act.GetType() == common.ActionTypeStartTask {
 		// a Move, the action next should be beging task
 	} else {
 		t.Errorf("After 1 step move, the next pending task should be begin task, but actual is %v : %+v", r.act.GetType(), r.act)
@@ -329,7 +328,7 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 		t.Errorf("Exepct this step to perform begin task step. Which remains at the task start position")
 		t.Fail()
 	}
-	if r.act.GetType() == action.ActionTypeMove && r.act.(*action.MoveAction).End == t1.GetDestination() {
+	if r.act.GetType() == common.ActionTypeMove && r.act.(*common.MoveAction).End == t1.GetDestination() {
 	} else {
 		t.Errorf("Expect next step move to target location after execute beging action.\n What is the actual action? %+v", r.act)
 	}
@@ -339,7 +338,7 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	} else {
 		t.Errorf("Should move to final destination with execution. What actual move was %+v", trace)
 	}
-	if r.act.GetType() == action.ActionTypeEndTask {
+	if r.act.GetType() == common.ActionTypeEndTask {
 		// next should end execution
 	} else {
 		t.Errorf("Should plan to end the task execution")
@@ -350,7 +349,7 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	} else {
 		t.Errorf("Execte end task ")
 	}
-	if r.act == action.Null() {
+	if r.act == common.Null() {
 		// Should be nothing left
 	} else {
 		t.Errorf("Should release the robot to idle. Actual: %+v", r.act)
@@ -429,4 +428,7 @@ func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
 		t.Errorf("Failed. Finished task count should be 2, yet received %d", stm.FinishedCount())
 		t.FailNow()
 	}
+}
+func TestRobotOnlyMakeLegalMoves(t *testing.T) {
+
 }
