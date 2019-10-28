@@ -26,7 +26,7 @@ func TestTaskManagerPushAtomicSuccess(t *testing.T) {
 	tq.AddTask(common.NewTimePriorityTask())
 
 	if len(tq.GetAllTasks()) != 1 {
-		t.Errorf("Insert one task into queue, expect queue size to be 1\n, current length is %d", l)
+		t.Errorf("Insert one task into queue, expect queue size to be 1\n, current length is %d", len(tq.GetAllTasks()))
 	}
 }
 

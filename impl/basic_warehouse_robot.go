@@ -317,14 +317,23 @@ func (stm *SimulatedTaskManager) TaskUpdate(taskID common.TaskID, status common.
 	switch status {
 
 	case common.Completed:
-		stm.archive[taskID] = stm.active[taskID]
-		delete(stm.active, taskID)
+		if t, ok := stm.active[taskID]; ok {
+			stm.archive[taskID] = t
+			delete(stm.active, taskID)
+			return nil
+		} else {
+			return errors.New("status can't jump from UnAssigned to Completed")
+		}
 
-		return nil
 	case common.Assigned:
-		stm.active[taskID] = stm.tasks[taskID]
-		delete(stm.tasks, taskID)
-		return nil
+		if t, ok := stm.tasks[taskID]; ok {
+			stm.active[taskID] = t
+			delete(stm.tasks, taskID)
+			return nil
+		} else {
+			return errors.New("task no found")
+		}
+
 	default:
 		return nil
 	}

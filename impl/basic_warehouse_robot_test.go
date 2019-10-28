@@ -172,30 +172,32 @@ func TestHasTasks(t *testing.T) {
 	addT2()
 
 	// Expect HasTask to Be True
-	if stm.HasTasks() {
+	if stm.HasTasks() && len(stm.GetAllTasks()) == 2 {
 		// no problem
 	} else {
 		t.Errorf("The HasTasks should return true, given no claim has been done")
 	}
-	err := stm.TaskUpdate(t1.GetTaskID(), common.Completed)
+	err := stm.TaskUpdate(t1.GetTaskID(), common.Assigned)
+	err = stm.TaskUpdate(t1.GetTaskID(), common.Completed)
 	if err != nil {
-		t.Error("Upfate failed")
+		t.Error("Update failed")
 		t.FailNow()
 	}
 	// Expect HasTask to Be True
-	if stm.HasTasks() {
+	if stm.HasTasks() && stm.ActiveCount() == 0 && stm.FinishedCount() == 1 {
 		// no problem
 	} else {
 		t.Errorf("The HasTasks should return true, though 1 out of 2 is done")
 	}
+	err = stm.TaskUpdate(t2.GetTaskID(), common.Assigned)
 	err = stm.TaskUpdate(t2.GetTaskID(), common.Completed)
 	if err != nil {
-		t.Error("Upfate failed")
+		t.Error("Update failed")
 		t.FailNow()
 	}
 	// Expect HasTask to Be True
 	if stm.HasTasks() {
-		t.Errorf("The HasTasks should return false, 2 out of 2 are done")
+		t.Errorf("The HasTasks should return false, 2 out of 2 are done. %d active, %d finished, all remain %+v", stm.ActiveCount(), stm.FinishedCount(), stm.GetAllTasks())
 	}
 }
 
