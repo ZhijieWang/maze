@@ -1,8 +1,6 @@
-package action
+package common
 
 import (
-	"maze/common"
-
 	"gonum.org/v1/gonum/graph"
 )
 
@@ -38,8 +36,8 @@ type DurationAction interface {
 
 type MoveAction struct {
 	child  Action
-	Start  common.Location
-	End    common.Location
+	Start  Location
+	End    Location
 	Path   []graph.Node
 	status ActionStatus
 }
@@ -59,10 +57,10 @@ func (a *MoveAction) SetChild(c Action) {
 func (a *MoveAction) GetContent() interface{} {
 	return a
 }
-func CreateMoveAction(start common.Location, end common.Location) *MoveAction {
+func CreateMoveAction(start Location, end Location) *MoveAction {
 	return &MoveAction{nil, start, end, nil, PendingStatus}
 }
-func CreateMoveActionWithPath(start, end common.Location, path []graph.Node) *MoveAction {
+func CreateMoveActionWithPath(start, end Location, path []graph.Node) *MoveAction {
 	return &MoveAction{nil, start, end, path, PendingStatus}
 }
 func (a *MoveAction) GetStatus() ActionStatus {
@@ -78,10 +76,10 @@ func (a *MoveAction) SetStatus(s ActionStatus) {
 
 type BeginTaskAction struct {
 	child Action
-	here  common.Location
+	here  Location
 }
 
-func CreateBeginTaskAction(here common.Location) *BeginTaskAction {
+func CreateBeginTaskAction(here Location) *BeginTaskAction {
 	return &BeginTaskAction{nil, here}
 }
 func (a *BeginTaskAction) GetChild() Action {
@@ -102,7 +100,7 @@ func (a *BeginTaskAction) SetChild(c Action) {
 
 type EndTaskAction struct {
 	child Action
-	here  common.Location
+	here  Location
 }
 
 func (a *EndTaskAction) GetChild() Action {
@@ -120,7 +118,7 @@ func (a *EndTaskAction) GetContent() interface{} {
 func (a *EndTaskAction) SetChild(c Action) {
 	a.child = c
 }
-func CreateEndTaskAction(here common.Location) *EndTaskAction {
+func CreateEndTaskAction(here Location) *EndTaskAction {
 	return &EndTaskAction{nil, here}
 }
 
