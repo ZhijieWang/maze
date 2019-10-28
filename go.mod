@@ -105,6 +105,6 @@ require (
 	gopkg.in/yaml.v2 v2.2.4 // indirect
 	mvdan.cc/unparam v0.0.0-20190917161559-b83a221c10a2 // indirect
 	rsc.io/binaryregexp v0.2.0 // indirect
-	rsc.io/quote v1.5.2
+	rsc.io/quote v1.5.2 // indirect
 	sourcegraph.com/sqs/pbtypes v1.0.0 // indirect
 )
