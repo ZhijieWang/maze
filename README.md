@@ -32,6 +32,9 @@ Some basic simulation was run. Realized some limitation in existing Application 
 Oct 24 2019 
 Implemented basic action graph generation and execution. With sufficient tests to pass as first implementation.
 Fixed some minot code import cycles to make sure the build pass.
+Improve the construct of robots. A robot should have a Init function which is its initialization, a Plan function which can read from senses and context to devise a plan; a Execute function which executes the action plan that derived from Plan function. The overall Plan then Execute can be wrapped into a Run function, as an entry point.
+
+In the plan function, a robot can read its world or many other things. Technically the sensing can be done in another stack layer, constantly pulling or updating the sensor reading. Rather than the main thread triggers the data fetching and wait for cycle to complete.
 
 A typical client and server model will require a sever, which server as many functionality:
 1. Name discovery
@@ -49,7 +52,7 @@ Drawbacks -- super pain in the neck to debug, stuck in message loops.
 
 I guess I shouldn't be jumping in so early to achieve 3. But let's start with 1.
 
-RPC based simulation. Bots announce their location to central. Bots observe their location from central. Central persist location, performs syncrhonization, performs message delivery.
+RPC based simulation. Bots announce their location to central. Bots observe their location from central. Central persist location, performs synchronization, performs message delivery.
 
 First step is channels, let next be RPC, and finally just messages flying around. Let tracing be fun.
 

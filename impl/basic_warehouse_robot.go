@@ -1,24 +1,24 @@
-// Copyright © 2019 Zhijie (Bill) Wang <wangzhijiebill@gmail.com>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ *  Copyright (c) 2019 Zhijie (Bill) Wang
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package impl
 
 import (
 	"errors"
-	"log"
 	"maze/common"
 
-	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
@@ -36,6 +36,9 @@ type simpleWarehouseRobot struct {
 	path []graph.Node
 	tick int
 	act  common.Action
+
+	common.World // a place to read world,
+	common.TaskManager
 }
 
 // ID returns the robot UUID
@@ -163,24 +166,24 @@ func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
 }
 
 // Run is a function that can be run in a concurrent way
-func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common.Trace {
+func (r *simpleWarehouseRobot) Run() common.Trace {
 	source := r.location
 	r.tick += 1
 	if r.act.GetType() == common.ActionTypeNull {
 		if r.task == nil {
-			if tm.HasTasks() {
-				t := tm.GetNext()
-				err := tm.TaskUpdate(t.GetTaskID(), common.Assigned)
+			if r.TaskManager.HasTasks() {
+				t := r.TaskManager.GetNext()
+				err := r.TaskManager.TaskUpdate(t.GetTaskID(), common.Assigned)
 				if err != nil {
 					panic("Failed to update task")
 				}
-				r.act = PlanTaskAction(w.GetGraph(), r.location, t)
+				r.act = PlanTaskAction(r.World.GetGraph(), r.location, t)
 				r.task = t
 			}
 		}
 	}
 
-	n, act := r.Execute(w.GetGraph(), tm)
+	n, act := r.Execute(r.World.GetGraph(), r.TaskManager)
 	r.act = act
 	trace := common.Trace{
 		RobotID:   r.ID(),
@@ -192,7 +195,7 @@ func (r *simpleWarehouseRobot) Run(w common.World, tm common.TaskManager) common
 	return trace
 	// r.localWorld = worldReader.Observe(r.location)
 }
-func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node) common.Robot {
+func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node, world common.World, manager common.TaskManager) *simpleWarehouseRobot {
 	s := simpleWarehouseRobot{
 		id,
 		location,
@@ -200,8 +203,14 @@ func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node) common.Robo
 		nil,
 		0,
 		common.Null(),
+		world,
+		manager,
 	}
 	return &s
+}
+
+func (r *simpleWarehouseRobot) Init() bool {
+	return true
 }
 
 type WarehouseWorld struct {
@@ -266,17 +275,6 @@ func CreateWarehouseWorld() *WarehouseWorld {
 	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(10), w.graph.Node(11)))
 	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(11), w.graph.Node(12)))
 	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(12), w.graph.Node(8)))
-	var numRobots int = 5
-
-	for i := 0; i < numRobots; i++ {
-		rID, err := uuid.NewUUID()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		w.AddRobot(NewSimpleWarehouseRobot(rID,
-			w.graph.Node(1)))
-	}
 	return w
 }
 

@@ -41,7 +41,7 @@ func CreateCentralizedSimulation() common.Simulation {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.world.AddRobot(common.NewSimpleRobot(rID, c.world.GetGraph().Nodes().Node()))
+		c.world.AddRobot(common.NewSimpleRobot(rID, c.world.GetGraph().Nodes().Node(), c.world, c.tm))
 	}
 	for i := 0; i < 20; i++ {
 		t := common.NewTimePriorityTask()
@@ -54,7 +54,7 @@ func CreateCentralizedSimulation() common.Simulation {
 
 func (sim centralizedSimulation) Run(obs common.Observer) error {
 	for _, i := range sim.world.GetRobots() {
-		trace := i.Run(sim.world, sim.tm)
+		trace := i.Run()
 		sim.world.UpdateRobot(i)
 		obs.OnNotify(trace)
 	}
