@@ -433,8 +433,9 @@ func TestRobotCanExecuteMoveInSimulation(t *testing.T) {
 	if len(stm.GetAllTasks()) != 0 {
 		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
 	}
-	if stm.FinishedCount() != 2 {
+	if stm.FinishedCount() != 2 || stm.ActiveCount() != 0 {
 		t.Errorf("Failed. Finished task count should be 2, yet received %d", stm.FinishedCount())
 		t.FailNow()
 	}
+
 }

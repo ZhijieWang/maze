@@ -49,43 +49,9 @@ func (r *simpleWarehouseRobot) Location() graph.Node {
 	return r.location
 }
 
-//TaskMove is a movement policy for Task Oriented movement
-// func TaskMove(w common.World, tm common.TaskManager, r simpleWarehouseRobot, t int) common.Trace {
-// 	if r.task != nil {
-// 		trace := common.Trace{
-// 			RobotID:   r.ID(),
-// 			Source:    r.Location(),
-// 			Target:    r.path[0],
-// 			Timestamp: t,
-// 		}
-// 		r.location = r.path[0]
-// 		if len(r.path) == 1 {
-// 			r.task = nil
-// 			r.path = nil
-// 		} else {
-// 			r.path = r.path[1:]
-// 		}
-// 		return trace
-// 	}
-// 	tasks := w.GetTasks()
-// 	if len(tasks) == 0 {
-// 		log.Println("No Tasks")
+func (r *simpleWarehouseRobot) Stop() {
 
-// 		return common.NoMove(w, &r, t)
-// 	}
-// 	tMin := tasks[rand.Intn(len(tasks))]
-
-// pt, _ := path.BellmanFordFrom(r.Location(), w.GetGraph())
-// 	p, _ := pt.To(tMin.GetDestination().ID())
-// 	r.path = p[1:]
-// 	r.task = tMin
-// 	return common.Trace{
-// 		RobotID:   r.ID(),
-// 		Source:    r.Location(),
-// 		Target:    p[0],
-// 		Timestamp: t,
-// 	}
-// }
+}
 func (r *simpleWarehouseRobot) Plan(g graph.Graph) {
 	r.act = PlanTaskAction(g, r.Location(), r.task)
 }
@@ -141,7 +107,8 @@ func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (gr
 		tm.TaskUpdate(r.task.GetTaskID(), common.Assigned)
 		r.act = r.act.GetChild()
 	case common.ActionTypeEndTask:
-		// mark task complete and remove self task
+		// mark task complete and remove self task\
+
 		tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
 		r.task = nil
 		r.act = r.act.GetChild()
@@ -347,18 +314,20 @@ func (stm *SimulatedTaskManager) GetTasks(n int) []common.Task {
 
 func (stm *SimulatedTaskManager) TaskUpdate(taskID common.TaskID, status common.TaskStatus) error {
 
-	if status == common.Completed {
-		stm.archive[taskID] = stm.tasks[taskID]
-		delete(stm.tasks, taskID)
+	switch status {
+
+	case common.Completed:
+		stm.archive[taskID] = stm.active[taskID]
+		delete(stm.active, taskID)
+
 		return nil
-	} else if status == common.Assigned {
+	case common.Assigned:
 		stm.active[taskID] = stm.tasks[taskID]
 		delete(stm.tasks, taskID)
 		return nil
-	} else {
-		return stm.tasks[taskID].UpdateStatus(status)
+	default:
+		return nil
 	}
-
 }
 
 func (stm *SimulatedTaskManager) AddTask(t common.Task) bool {
