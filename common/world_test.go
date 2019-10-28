@@ -33,12 +33,13 @@ func TestCanMakeWorld(t *testing.T) {
 
 func TestCanAssignRobot(t *testing.T) {
 	g := common.CreateWorld(2, common.NewBasicTaskManager())
+	numBots := len(g.GetRobots())
 	id, _ := uuid.NewUUID()
 	r := common.NewSimpleRobot(id, g.GetGraph().Node(0))
 	g.AddRobot(r)
 	rs := g.GetRobots()
-	if len(rs) != 1 {
-		t.Errorf("We have a problem. Expected length 1, actual length %d", len(rs))
+	if len(rs) != (numBots + 1) {
+		t.Errorf("We have a problem. Expected length %d , actual length %d", numBots+1, len(rs))
 	}
 }
 

@@ -99,7 +99,6 @@ func TestSimulationExecuteTask(t *testing.T) {
 	}
 	found := false
 	for _, i := range obs.traces {
-		t.Logf("Value of trace is %+v ", i)
 		if i.RobotID != uuid.Nil {
 			found = true
 		}
