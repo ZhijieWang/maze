@@ -17,11 +17,10 @@ package impl
 
 import (
 	"errors"
-	"maze/common"
-
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
+	"maze/common"
 )
 
 // simpleWarehouseRobot is a data holder struct for robot

@@ -19,17 +19,50 @@ package impl
 import (
 	"github.com/google/uuid"
 	"log"
+	"math/rand"
 	"maze/common"
+	"time"
 )
 
-type System struct {
-	w    *WarehouseWorld
-	stm  *SimulatedTaskManager
-	refs []*ActorRef
+type TaskFeederActor struct {
+	probability int
+	frequency   int
+	w           common.World
+	tm          *SimulatedTaskManager
+	comm        chan interface{}
+}
+
+func (actor *TaskFeederActor) Run() {
+	go func() {
+		for {
+			select {
+			default:
+				time.After(5)
+				if actor.probability > rand.Intn(100) {
+					actor.tm.AddTask(common.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Nodes().Node(), actor.w.GetGraph().Nodes().Node()))
+				}
+			case <-actor.comm:
+				break
+			}
+
+		}
+	}()
+}
+func (actor *TaskFeederActor) Init() {
+
+}
+func (actor *TaskFeederActor) Stop() {
+	close(actor.comm)
+}
+
+type Actor interface {
+	Init()
+	Run()
+	Stop()
 }
 type ActorRef struct {
-	comm    chan interface{}
-	robot   *simpleWarehouseRobot
+	comm  chan interface{}
+	robot *simpleWarehouseRobot
 }
 
 func (actor *ActorRef) Run() {
@@ -46,10 +79,20 @@ func (actor *ActorRef) Run() {
 		return
 	}()
 }
-func (actor ActorRef) Init() {
+func (actor *ActorRef) Init() {
 	actor.robot.Init()
 
 }
+func (actor *ActorRef) Stop() {
+	close(actor.comm)
+}
+
+type System struct {
+	w    *WarehouseWorld
+	stm  *SimulatedTaskManager
+	refs []Actor
+}
+
 func (s *System) Init() {
 	s.w = CreateWarehouseWorld()
 	s.stm = CreateSimulatedTaskManager()
@@ -57,6 +100,7 @@ func (s *System) Init() {
 	t.Origin = s.w.graph.Node(2)
 	t.Destination = s.w.graph.Node(6)
 	s.stm.AddTask(t)
+
 }
 func (s *System) Start() {
 
@@ -64,13 +108,14 @@ func (s *System) Start() {
 	for _, i := range s.refs {
 		i.Init()
 	}
+	s.refs = append(s.refs, &TaskFeederActor{30, 5, s.w, s.stm, make(chan interface{})})
 	for _, i := range s.refs {
 		go i.Run()
 	}
 }
 func (s System) Stop() {
 	for _, i := range s.refs {
-		close(i.comm)
+		i.Stop()
 	}
 }
 
