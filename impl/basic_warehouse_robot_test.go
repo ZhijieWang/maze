@@ -1,20 +1,23 @@
-// Copyright © 2019 Zhijie (Bill) Wang <wangzhijiebill@gmail.com>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ *  Copyright (c) 2019 Zhijie (Bill) Wang
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package impl
 
 import (
 	"maze/common"
+
 	"reflect"
 	"testing"
 
@@ -22,6 +25,50 @@ import (
 
 	"gonum.org/v1/gonum/graph"
 )
+
+var (
+	world  *WarehouseWorld
+	stm    *SimulatedTaskManager
+	t1     *common.TimePriorityTask
+	t2     *common.TimePriorityTask
+	t3     *common.TimePriorityTask
+	t4     *common.TimePriorityTask
+	robots []*simpleWarehouseRobot
+)
+
+func setup() {
+	world = CreateWarehouseWorld()
+	stm = CreateSimulatedTaskManager()
+
+	robots = []*simpleWarehouseRobot{}
+	robots = append(robots, NewSimpleWarehouseRobot(uuid.New(), world.graph.Node(1), world, stm))
+	robots = append(robots, NewSimpleWarehouseRobot(uuid.New(), world.graph.Node(1), world, stm))
+}
+func addT1() {
+	t1 = common.NewTimePriorityTask()
+	t1.Origin = world.GetGraph().Node(1)
+	t1.Destination = world.GetGraph().Node(2)
+	stm.AddTask(t1)
+}
+func addT2() {
+	t2 = common.NewTimePriorityTask()
+	t2.Origin = world.GetGraph().Node(1)
+	t2.Destination = world.GetGraph().Node(6)
+	stm.AddTask(t2)
+}
+func addT3() {
+	t3 = common.NewTimePriorityTask()
+	t3.Origin = world.graph.Node(2)
+	t3.Destination = world.graph.Node(6)
+	stm.AddTask(t3)
+
+}
+func addT4() {
+	t4 = common.NewTimePriorityTask()
+	t4.Origin = world.graph.Node(2)
+	t4.Destination = world.graph.Node(9)
+	stm.AddTask(t4)
+}
 
 func Test_simpleWarehouseRobot_ID(t *testing.T) {
 	type fields struct {
@@ -79,7 +126,7 @@ func Test_simpleWarehouseRobot_Run(t *testing.T) {
 				task:     tt.fields.task,
 				path:     tt.fields.path,
 			}
-			if got := r.Run(tt.args.w, tt.args.tm); !reflect.DeepEqual(got, tt.want) {
+			if got := r.Run(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("simpleWarehouseRobot.Run() = %v, want %v", got, tt.want)
 			}
 		})
@@ -90,6 +137,8 @@ func TestNewSimpleWarehouseRobot(t *testing.T) {
 	type args struct {
 		id       common.RobotID
 		location graph.Node
+		w        common.World
+		tm       common.TaskManager
 	}
 	tests := []struct {
 		name string
@@ -100,7 +149,7 @@ func TestNewSimpleWarehouseRobot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewSimpleWarehouseRobot(tt.args.id, tt.args.location); !reflect.DeepEqual(got, tt.want) {
+			if got := NewSimpleWarehouseRobot(tt.args.id, tt.args.location, tt.args.w, tt.args.tm); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewSimpleWarehouseRobot() = %v, want %v", got, tt.want)
 			}
 		})
@@ -118,15 +167,10 @@ func TestBeAbleToGetRobots(t *testing.T) {
 	}
 }
 func TestHasTasks(t *testing.T) {
-	stm := CreateSimulatedTaskManager()
-	t1 := common.NewTimePriorityTask()
-	t2 := common.NewTimePriorityTask()
-	t1.Origin = graph.Empty.Node()
-	t2.Origin = graph.Empty.Node()
-	t1.Destination = graph.Empty.Node()
-	t2.Destination = graph.Empty.Node()
-	stm.AddTask(t1)
-	stm.AddTask(t2)
+	setup()
+	addT1()
+	addT2()
+
 	// Expect HasTask to Be True
 	if stm.HasTasks() {
 		// no problem
@@ -156,19 +200,14 @@ func TestHasTasks(t *testing.T) {
 }
 
 func TestRobotClaimTask(t *testing.T) {
-	stm := CreateSimulatedTaskManager()
-	w := CreateWarehouseWorld()
-	t1 := common.NewTimePriorityTask()
-	t1.Origin = w.GetGraph().Node(1)
-	t1.Destination = w.GetGraph().Node(2)
+	setup()
 	stm.AddTask(t1)
 	id, _ := uuid.NewUUID()
-	robot := NewSimpleWarehouseRobot(id, w.graph.Node(1))
-	r := robot.(*simpleWarehouseRobot)
+	r := NewSimpleWarehouseRobot(id, world.graph.Node(1), world, stm)
 	if r.task != nil {
 		t.Error("Shouldn't have any task on newly instatiated item")
 	}
-	r.Run(w, stm)
+	r.Run()
 
 	if stm.HasTasks() {
 		t.Errorf("Robot failed to update task status")
@@ -180,42 +219,32 @@ func TestRobotClaimTask(t *testing.T) {
 	}
 }
 func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
-	w := CreateWarehouseWorld()
-	robots := w.GetRobots()
-	if len(robots) <= 0 {
-		t.Error("Not enough robots")
-	}
+
+	setup()
+	addT1()
+	addT2()
 	for _, i := range robots {
 		if i.Location() == nil {
-			t.Errorf("Robot lication is nil")
+			t.Errorf("Robot location is nil")
 			t.FailNow()
 		}
 	}
-	stm := CreateSimulatedTaskManager()
-	t1 := common.NewTimePriorityTask()
-	t2 := common.NewTimePriorityTask()
-	t1.Origin = w.graph.Node(1)
-	t2.Origin = w.graph.Node(1)
-	t1.Destination = w.graph.Node(6)
-	t2.Destination = w.graph.Node(5)
-	stm.AddTask(t1)
-	stm.AddTask(t2)
 	// cycle to claim tasks
 
 	for _, i := range robots {
-		i.Run(w, stm)
+		i.Run()
 	}
 	for _, i := range robots {
-		i.Run(w, stm)
+		i.Run()
 	}
 	if len(stm.GetAllTasks()) > 1 {
 		t.Errorf("Robot Failed to claim tasks")
 	}
 	for _, i := range robots {
-		i.Run(w, stm)
+		i.Run()
 	}
 	for _, i := range robots {
-		i.Run(w, stm)
+		i.Run()
 	}
 	if stm.FinishedCount() != 2 {
 		t.Errorf("Failed. Finished task count should be 2, yet received %d", stm.FinishedCount())
@@ -224,19 +253,16 @@ func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
 }
 
 func TestRobotGenerateActionPlan(t *testing.T) {
-	w := CreateWarehouseWorld()
-	r := w.GetRobots()[0]
+	setup()
+	addT3()
+	r := robots[0]
 
-	t1 := common.NewTimePriorityTask()
-	t1.Origin = w.graph.Node(2)
-	t1.Destination = w.graph.Node(6)
-
-	if r.Location() != w.GetGraph().Node(1) {
+	if r.Location() != world.GetGraph().Node(1) {
 		t.Errorf("The location of the robot initialized is incorrect")
 		t.Fail()
 	}
-	act := PlanTaskAction(w.GetGraph(), r.Location(), t1)
-	if act.GetType() == common.ActionTypeMove && act.HasChild() && (act.(*common.MoveAction).Start == w.GetGraph().Node(1)) && (act.(*common.MoveAction).End == w.GetGraph().Node(2)) && len(act.(*common.MoveAction).Path) == 1 {
+	act := PlanTaskAction(world.GetGraph(), r.Location(), t3)
+	if act.GetType() == common.ActionTypeMove && act.HasChild() && (act.(*common.MoveAction).Start == world.GetGraph().Node(1)) && (act.(*common.MoveAction).End == world.GetGraph().Node(2)) && len(act.(*common.MoveAction).Path) == 1 {
 
 	} else {
 		t.Errorf("First Generated Action sequence should be ActionTypeMove, got %+v", act)
@@ -248,14 +274,14 @@ func TestRobotGenerateActionPlan(t *testing.T) {
 		t.Fail()
 	}
 	act = act.GetChild()
-	if act.GetType() == common.ActionTypeMove && act.(*common.MoveAction).Start == t1.GetOrigination() && act.(*common.MoveAction).End == t1.GetDestination() {
+	if act.GetType() == common.ActionTypeMove && act.(*common.MoveAction).Start == t3.GetOrigination() && act.(*common.MoveAction).End == t3.GetDestination() {
 
 	} else {
 		t.Errorf("Action is expected to have Move after Beging Action actual is %+v", act)
 	}
 	act = act.GetChild()
 	if act.GetType() != common.ActionTypeEndTask {
-		t.Error("Action is expected to have child End aften.ActionTypeMove again")
+		t.Error("Action is expected to have child End after move")
 	}
 	act = act.GetChild()
 	if act.GetType() == common.ActionTypeNull {
@@ -265,33 +291,25 @@ func TestRobotGenerateActionPlan(t *testing.T) {
 	}
 }
 func TestRobotCanExecuteTaskPlan(t *testing.T) {
-	w := CreateWarehouseWorld()
-	r := w.GetRobots()[0]
-	stm := CreateSimulatedTaskManager()
-	t1 := common.NewTimePriorityTask()
-	t1.Origin = w.graph.Node(2)
-	t1.Destination = w.graph.Node(6)
-	stm.AddTask(t1)
-	if r.Location() != w.GetGraph().Node(1) {
-		t.Errorf("The location of the robot initialized is incorrect")
-		t.Fail()
-	}
-	// targetAct := action.CreateMoveAction(w.GetGraph().Node(1), w.GetGraph().Node(2))
+	setup()
 
-	act := PlanTaskAction(w.GetGraph(), r.Location(), t1)
-	r.(*simpleWarehouseRobot).act = act
-	r.(*simpleWarehouseRobot).task = t1
-	node, act := r.(*simpleWarehouseRobot).Execute(w.GetGraph(), stm)
+	addT3()
+	r := robots[0]
 
-	if node == t1.Origin && act.GetType() == common.ActionTypeStartTask {
+	act := PlanTaskAction(world.GetGraph(), r.Location(), t3)
+	r.act = act
+	r.task = t3
+	node, act := r.Execute(world.GetGraph(), stm)
+
+	if node == t3.Origin && act.GetType() == common.ActionTypeStartTask {
 
 	} else {
 		t.Errorf("target should be the task start location, actual target is %+v", node)
 	}
-	r.(*simpleWarehouseRobot).act = act
-	r.(*simpleWarehouseRobot).location = node
-	node, act = r.(*simpleWarehouseRobot).Execute(w.GetGraph(), stm)
-	if node == t1.GetOrigination() && act.GetType() == common.ActionTypeMove && act.(*common.MoveAction).End == t1.GetDestination() {
+	r.act = act
+	r.location = node
+	node, act = r.Execute(world.GetGraph(), stm)
+	if node == t3.GetOrigination() && act.GetType() == common.ActionTypeMove && act.(*common.MoveAction).End == t3.GetDestination() {
 
 	} else {
 		t.Errorf("Failed to prepare for next step of move after begin task")
@@ -299,16 +317,12 @@ func TestRobotCanExecuteTaskPlan(t *testing.T) {
 }
 
 func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
-	w := CreateWarehouseWorld()
-	r := w.GetRobots()[0].(*simpleWarehouseRobot)
-	stm := CreateSimulatedTaskManager()
-	t1 := common.NewTimePriorityTask()
-	t1.Origin = w.graph.Node(2)
-	t1.Destination = w.graph.Node(6)
-	stm.AddTask(t1)
-	trace := r.Run(w, stm)
+	setup()
+	addT3()
+	r := robots[0]
+	trace := r.Run()
 
-	if trace.Source == w.GetGraph().Node(1) && trace.Target == w.GetGraph().Node(2) {
+	if trace.Source == world.GetGraph().Node(1) && trace.Target == world.GetGraph().Node(2) {
 		// Move one step
 	} else {
 		t.Errorf("First step should be moving from 1 to 2, actual trace is %+v", trace)
@@ -320,20 +334,20 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 		t.Errorf("After 1 step move, the next pending task should be begin task, but actual is %v : %+v", r.act.GetType(), r.act)
 		t.Fail()
 	}
-	trace = r.Run(w, stm)
+	trace = r.Run()
 
-	if trace.Source == t1.GetOrigination() && trace.Target == t1.GetOrigination() {
+	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetOrigination() {
 		// execute beging task action, stay at the source node
 	} else {
 		t.Errorf("Exepct this step to perform begin task step. Which remains at the task start position")
 		t.Fail()
 	}
-	if r.act.GetType() == common.ActionTypeMove && r.act.(*common.MoveAction).End == t1.GetDestination() {
+	if r.act.GetType() == common.ActionTypeMove && r.act.(*common.MoveAction).End == t3.GetDestination() {
 	} else {
 		t.Errorf("Expect next step move to target location after execute beging action.\n What is the actual action? %+v", r.act)
 	}
-	trace = r.Run(w, stm)
-	if trace.Source == t1.GetOrigination() && trace.Target == t1.GetDestination() {
+	trace = r.Run()
+	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetDestination() {
 
 	} else {
 		t.Errorf("Should move to final destination with execution. What actual move was %+v", trace)
@@ -343,8 +357,8 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	} else {
 		t.Errorf("Should plan to end the task execution")
 	}
-	trace = r.Run(w, stm)
-	if trace.Source == t1.GetDestination() && trace.Target == t1.GetDestination() {
+	trace = r.Run()
+	if trace.Source == t3.GetDestination() && trace.Target == t3.GetDestination() {
 		// wrap up task
 	} else {
 		t.Errorf("Execte end task ")
@@ -356,31 +370,26 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	}
 }
 
-func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
-	w := CreateWarehouseWorld()
-	robots := w.GetRobots()
+func TestRobotCanExecuteMoveInSimulation(t *testing.T) {
+
+	setup()
+
+	addT3()
+	addT4()
 	if len(robots) <= 0 {
 		t.Error("Not enough robots")
 	}
 	for _, i := range robots {
 		if i.Location() == nil {
-			t.Errorf("Robot lication is nil")
+			t.Errorf("Robot on is nil")
 			t.FailNow()
 		}
 	}
-	stm := CreateSimulatedTaskManager()
-	t1 := common.NewTimePriorityTask()
-	t2 := common.NewTimePriorityTask()
-	t1.Origin = w.graph.Node(2)
-	t2.Origin = w.graph.Node(2)
-	t1.Destination = w.graph.Node(6)
-	t2.Destination = w.graph.Node(9)
-	stm.AddTask(t1)
-	stm.AddTask(t2)
+
 	// cycle to claim tasks
 	trace := []common.Trace{}
 	for _, i := range robots {
-		trace = append(trace, i.Run(w, stm))
+		trace = append(trace, i.Run())
 	}
 
 	if len(stm.GetAllTasks()) > 1 {
@@ -388,7 +397,7 @@ func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
 	}
 	tclaimed := false
 	for _, ts := range trace {
-		if ts.Target != nil && ts.Target == t1.GetOrigination() {
+		if ts.Target != nil && ts.Target == t3.GetOrigination() {
 			tclaimed = true
 		}
 	}
@@ -397,7 +406,7 @@ func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
 	}
 	tclaimed = false
 	for _, ts := range trace {
-		if ts.Target != nil && ts.Target == t2.GetOrigination() {
+		if ts.Target != nil && ts.Target == t4.GetOrigination() {
 			tclaimed = true
 		}
 	}
@@ -410,16 +419,16 @@ func TestRobotCanExecuteMoveInSimultation(t *testing.T) {
 	}
 	// cycle tn.ActionTypeMove to targets
 	for _, i := range robots {
-		i.Run(w, stm)
+		i.Run()
 	}
 	for _, i := range robots {
-		i.Run(w, stm)
+		i.Run()
 	}
 	for _, i := range robots {
-		i.Run(w, stm)
+		i.Run()
 	}
 	for _, i := range robots {
-		i.Run(w, stm)
+		i.Run()
 	}
 	if len(stm.GetAllTasks()) != 0 {
 		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
