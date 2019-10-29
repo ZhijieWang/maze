@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package common
+package world
 
 import (
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
+	"maze/common"
 )
 
 //
@@ -44,14 +45,14 @@ import (
 //	|		|		|
 //	4	- 	8 	-	12
 
-func CreateBlankWorld() World {
+func CreateBlankWorld() common.World {
 	s := simpleWorld{}
 	s.grid = simple.NewWeightedUndirectedGraph(1, 10000000)
 	return &s
 }
 
 //CreateWorld generates a network of 12 nodes
-func CreateWorld(numRobots int, tm TaskManager) World {
+func CreateWorld(numRobots int, tm common.TaskManager) common.World {
 	w := simpleWorld{}
 	var g *simple.WeightedUndirectedGraph = simple.NewWeightedUndirectedGraph(1, 10000000)
 	for i := 1; i < 13; i++ {
@@ -77,34 +78,21 @@ func CreateWorld(numRobots int, tm TaskManager) World {
 	return &w
 }
 
-type Location graph.Node
-
-// World interface defines the behavior of World simulation
-type World interface {
-	GetGraph() graph.Graph
-	GetRobots() []Robot
-	UpdateRobot(Robot) bool
-	GetTasks() []Task
-	AddRobot(r Robot) bool
-	SetTasks(tasks []Task) bool
-	ClaimTask(tid TaskID, rid RobotID)
-}
-
 // simpleWorld is the base implementation of a fully visible world, backed with Gonum Simple Graph
 type simpleWorld struct {
-	robots []Robot
-	tasks  []Task
+	robots []common.Robot
+	tasks  []common.Task
 	grid   *simple.WeightedUndirectedGraph
 }
 
 // SetTasks allows the new tasks to be added to the world
-func (s *simpleWorld) SetTasks(tasks []Task) bool {
+func (s *simpleWorld) SetTasks(tasks []common.Task) bool {
 	s.tasks = append(s.tasks, tasks...)
 	return true
 }
 
 // GetTasks allows the rerieval of tasks (available only)
-func (s *simpleWorld) GetTasks() []Task {
+func (s *simpleWorld) GetTasks() []common.Task {
 	return s.tasks
 }
 
@@ -114,25 +102,25 @@ func (s *simpleWorld) GetGraph() graph.Graph {
 }
 
 // ClaimTask defines the mechanims that a Robot can claim a given task from the world
-func (s *simpleWorld) ClaimTask(tid TaskID, rid RobotID) {
+func (s *simpleWorld) ClaimTask(tid common.TaskID, rid common.RobotID) {
 }
 
 // GetRobots implemnts the fucntionality for retrieval of list of robots
-func (s *simpleWorld) GetRobots() []Robot {
+func (s *simpleWorld) GetRobots() []common.Robot {
 	return s.robots
 }
 
 // AddRobots add more robots to the stack
-func (s *simpleWorld) AddRobots(robots []Robot) bool {
+func (s *simpleWorld) AddRobots(robots []common.Robot) bool {
 	s.robots = append(s.robots, robots...)
 	return true
 }
-func (s *simpleWorld) AddRobot(robot Robot) bool {
+func (s *simpleWorld) AddRobot(robot common.Robot) bool {
 	s.robots = append(s.robots, robot)
 	return true
 }
 
-func (s *simpleWorld) UpdateRobot(that Robot) bool {
+func (s *simpleWorld) UpdateRobot(that common.Robot) bool {
 	for i, this := range s.robots {
 		if this.ID() == that.ID() {
 			s.robots[i] = that

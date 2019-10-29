@@ -1,20 +1,23 @@
-// Copyright © 2018 Zhijie (Bill) Wang <wangzhijiebill@gmail.com>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ *  Copyright (c) 2019 Zhijie (Bill) Wang
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-package common
+package task
 
 import (
+	"maze/common"
 	"reflect"
 	"testing"
 	"time"
@@ -40,10 +43,10 @@ func TestNewTimePriorityTask(t *testing.T) {
 
 func TestTimePriorityTask_Priority(t *testing.T) {
 	type fields struct {
-		ID              TaskID
+		ID              common.TaskID
 		Origin          graph.Node
 		Destination     graph.Node
-		Status          TaskStatus
+		Status          common.TaskStatus
 		OriginationTime time.Time
 		CompletionTime  time.Time
 	}
@@ -73,17 +76,17 @@ func TestTimePriorityTask_Priority(t *testing.T) {
 
 func TestTimePriorityTask_GetTaskID(t *testing.T) {
 	type fields struct {
-		ID              TaskID
+		ID              common.TaskID
 		Origin          graph.Node
 		Destination     graph.Node
-		Status          TaskStatus
+		Status          common.TaskStatus
 		OriginationTime time.Time
 		CompletionTime  time.Time
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   TaskID
+		want   common.TaskID
 	}{
 		// TODO: Add test cases.
 	}
@@ -106,10 +109,10 @@ func TestTimePriorityTask_GetTaskID(t *testing.T) {
 
 func TestTimePriorityTask_GetDestination(t *testing.T) {
 	type fields struct {
-		ID              TaskID
+		ID              common.TaskID
 		Origin          graph.Node
 		Destination     graph.Node
-		Status          TaskStatus
+		Status          common.TaskStatus
 		OriginationTime time.Time
 		CompletionTime  time.Time
 	}
@@ -139,10 +142,10 @@ func TestTimePriorityTask_GetDestination(t *testing.T) {
 
 func TestTimePriorityTask_GetOrigination(t *testing.T) {
 	type fields struct {
-		ID              TaskID
+		ID              common.TaskID
 		Origin          graph.Node
 		Destination     graph.Node
-		Status          TaskStatus
+		Status          common.TaskStatus
 		OriginationTime time.Time
 		CompletionTime  time.Time
 	}
@@ -172,15 +175,15 @@ func TestTimePriorityTask_GetOrigination(t *testing.T) {
 
 func TestTimePriorityTask_UpdateStatus(t *testing.T) {
 	type fields struct {
-		ID              TaskID
+		ID              common.TaskID
 		Origin          graph.Node
 		Destination     graph.Node
-		Status          TaskStatus
+		Status          common.TaskStatus
 		OriginationTime time.Time
 		CompletionTime  time.Time
 	}
 	type args struct {
-		status TaskStatus
+		status common.TaskStatus
 	}
 	tests := []struct {
 		name    string

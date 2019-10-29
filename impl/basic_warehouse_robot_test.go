@@ -17,6 +17,8 @@ package impl
 
 import (
 	"maze/common"
+	"maze/common/action"
+	"maze/common/task"
 
 	"reflect"
 	"testing"
@@ -29,10 +31,10 @@ import (
 var (
 	world  *WarehouseWorld
 	stm    *SimulatedTaskManager
-	t1     *common.TimePriorityTask
-	t2     *common.TimePriorityTask
-	t3     *common.TimePriorityTask
-	t4     *common.TimePriorityTask
+	t1     *task.TimePriorityTask
+	t2     *task.TimePriorityTask
+	t3     *task.TimePriorityTask
+	t4     *task.TimePriorityTask
 	robots []*simpleWarehouseRobot
 )
 
@@ -45,26 +47,26 @@ func setup() {
 	robots = append(robots, NewSimpleWarehouseRobot(uuid.New(), world.graph.Node(1), world, stm))
 }
 func addT1() {
-	t1 = common.NewTimePriorityTask()
+	t1 = task.NewTimePriorityTask()
 	t1.Origin = world.GetGraph().Node(1)
 	t1.Destination = world.GetGraph().Node(2)
 	stm.AddTask(t1)
 }
 func addT2() {
-	t2 = common.NewTimePriorityTask()
+	t2 = task.NewTimePriorityTask()
 	t2.Origin = world.GetGraph().Node(1)
 	t2.Destination = world.GetGraph().Node(6)
 	stm.AddTask(t2)
 }
 func addT3() {
-	t3 = common.NewTimePriorityTask()
+	t3 = task.NewTimePriorityTask()
 	t3.Origin = world.graph.Node(2)
 	t3.Destination = world.graph.Node(6)
 	stm.AddTask(t3)
 
 }
 func addT4() {
-	t4 = common.NewTimePriorityTask()
+	t4 = task.NewTimePriorityTask()
 	t4.Origin = world.graph.Node(2)
 	t4.Destination = world.graph.Node(9)
 	stm.AddTask(t4)
@@ -264,7 +266,7 @@ func TestRobotGenerateActionPlan(t *testing.T) {
 		t.Fail()
 	}
 	act := PlanTaskAction(world.GetGraph(), r.Location(), t3)
-	if act.GetType() == common.ActionTypeMove && act.HasChild() && (act.(*common.MoveAction).Start == world.GetGraph().Node(1)) && (act.(*common.MoveAction).End == world.GetGraph().Node(2)) && len(act.(*common.MoveAction).Path) == 1 {
+	if act.GetType() == common.ActionTypeMove && act.HasChild() && (act.(*action.MoveAction).Start == world.GetGraph().Node(1)) && (act.(*action.MoveAction).End == world.GetGraph().Node(2)) && len(act.(*action.MoveAction).Path) == 1 {
 
 	} else {
 		t.Errorf("First Generated Action sequence should be ActionTypeMove, got %+v", act)
@@ -276,7 +278,7 @@ func TestRobotGenerateActionPlan(t *testing.T) {
 		t.Fail()
 	}
 	act = act.GetChild()
-	if act.GetType() == common.ActionTypeMove && act.(*common.MoveAction).Start == t3.GetOrigination() && act.(*common.MoveAction).End == t3.GetDestination() {
+	if act.GetType() == common.ActionTypeMove && act.(*action.MoveAction).Start == t3.GetOrigination() && act.(*action.MoveAction).End == t3.GetDestination() {
 
 	} else {
 		t.Errorf("Action is expected to have Move after Beging Action actual is %+v", act)
@@ -311,7 +313,7 @@ func TestRobotCanExecuteTaskPlan(t *testing.T) {
 	r.act = act
 	r.location = node
 	node, act = r.Execute(world.GetGraph(), stm)
-	if node == t3.GetOrigination() && act.GetType() == common.ActionTypeMove && act.(*common.MoveAction).End == t3.GetDestination() {
+	if node == t3.GetOrigination() && act.GetType() == common.ActionTypeMove && act.(*action.MoveAction).End == t3.GetDestination() {
 
 	} else {
 		t.Errorf("Failed to prepare for next step of move after begin task")
@@ -344,7 +346,7 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 		t.Errorf("Exepct this step to perform begin task step. Which remains at the task start position")
 		t.Fail()
 	}
-	if r.act.GetType() == common.ActionTypeMove && r.act.(*common.MoveAction).End == t3.GetDestination() {
+	if r.act.GetType() == common.ActionTypeMove && r.act.(*action.MoveAction).End == t3.GetDestination() {
 	} else {
 		t.Errorf("Expect next step move to target location after execute beging action.\n What is the actual action? %+v", r.act)
 	}
@@ -365,7 +367,7 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	} else {
 		t.Errorf("Execte end task ")
 	}
-	if r.act == common.Null() {
+	if r.act == action.Null() {
 		// Should be nothing left
 	} else {
 		t.Errorf("Should release the robot to idle. Actual: %+v", r.act)

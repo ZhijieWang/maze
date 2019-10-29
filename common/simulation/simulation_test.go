@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package common_test
+package simulation_test
 
 import (
 	"log"
 	"maze/common"
+	"maze/common/robot"
+	"maze/common/simulation"
+	"maze/common/task"
+	"maze/common/world"
 	"testing"
 
 	"github.com/google/uuid"
@@ -29,11 +33,11 @@ type centralizedSimulation struct {
 	tm    common.TaskManager
 }
 
-func CreateCentralizedSimulation() common.Simulation {
+func CreateCentralizedSimulation() simulation.Simulation {
 
 	var c = centralizedSimulation{}
-	c.tm = common.NewBasicTaskManager()
-	c.world = common.CreateWorld(1, common.NewBasicTaskManager())
+	c.tm = task.NewBasicTaskManager()
+	c.world = world.CreateWorld(1, task.NewBasicTaskManager())
 	// c.world = common.CreateBlankWorld()
 	var numRobots int = 5
 	for i := 0; i < numRobots; i++ {
@@ -41,10 +45,10 @@ func CreateCentralizedSimulation() common.Simulation {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.world.AddRobot(common.NewSimpleRobot(rID, c.world.GetGraph().Nodes().Node(), c.world, c.tm))
+		c.world.AddRobot(robot.NewSimpleRobot(rID, c.world.GetGraph().Nodes().Node(), c.world, c.tm))
 	}
 	for i := 0; i < 20; i++ {
-		t := common.NewTimePriorityTask()
+		t := task.NewTimePriorityTask()
 		t.Destination = c.world.GetGraph().Nodes().Node()
 		c.tm.AddTask(t)
 	}
@@ -52,7 +56,7 @@ func CreateCentralizedSimulation() common.Simulation {
 	return c
 }
 
-func (sim centralizedSimulation) Run(obs common.Observer) error {
+func (sim centralizedSimulation) Run(obs simulation.Observer) error {
 	for _, i := range sim.world.GetRobots() {
 		trace := i.Run()
 		sim.world.UpdateRobot(i)

@@ -21,6 +21,7 @@ import (
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 	"maze/common"
+	"maze/common/action"
 )
 
 // simpleWarehouseRobot is a data holder struct for robot
@@ -59,18 +60,18 @@ func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) c
 	var start common.Action
 	var current common.Action
 	if location == task.GetOrigination() {
-		start = common.CreateBeginTaskAction(location)
+		start = action.CreateBeginTaskAction(location)
 		current = start
 	} else {
-		start = common.CreateMoveAction(location, task.GetOrigination())
-		start.(*common.MoveAction).Path, _ = GetPath(location, task.GetOrigination(), g)
-		start.SetChild(common.CreateBeginTaskAction(location))
+		start = action.CreateMoveAction(location, task.GetOrigination())
+		start.(*action.MoveAction).Path, _ = GetPath(location, task.GetOrigination(), g)
+		start.SetChild(action.CreateBeginTaskAction(location))
 		current = start.GetChild()
 	}
 	p, _ := GetPath(task.GetOrigination(), task.GetDestination(), g)
-	current.SetChild(common.CreateMoveActionWithPath(task.GetOrigination(), task.GetDestination(), p))
-	current.GetChild().SetChild(common.CreateEndTaskAction(task.GetDestination()))
-	current.GetChild().GetChild().SetChild(common.Null())
+	current.SetChild(action.CreateMoveActionWithPath(task.GetOrigination(), task.GetDestination(), p))
+	current.GetChild().SetChild(action.CreateEndTaskAction(task.GetDestination()))
+	current.GetChild().GetChild().SetChild(action.Null())
 
 	return start
 }
@@ -84,7 +85,7 @@ func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (gr
 
 	switch r.act.GetType() {
 	case common.ActionTypeMove:
-		move := r.act.(*common.MoveAction)
+		move := r.act.(*action.MoveAction)
 		move.SetStatus(common.ActiveStatus)
 		if len(move.Path) > 0 {
 			n := move.Path[0]
@@ -168,7 +169,7 @@ func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node, world commo
 		nil,
 		nil,
 		0,
-		common.Null(),
+		action.Null(),
 		world,
 		manager,
 	}

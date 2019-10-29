@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package common
+package task
 
 import (
+	"maze/common"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,10 +26,10 @@ import (
 
 // TimePriorityTask defines the priority of tasks via its OriginationTime
 type TimePriorityTask struct {
-	ID          TaskID
+	ID          common.TaskID
 	Origin      graph.Node
 	Destination graph.Node
-	Status      TaskStatus
+	Status      common.TaskStatus
 	//Carrier         RobotID
 	OriginationTime time.Time
 	CompletionTime  time.Time
@@ -39,7 +40,7 @@ func NewTimePriorityTask() *TimePriorityTask {
 	id, _ := uuid.NewUUID()
 	return &TimePriorityTask{
 		ID:              id,
-		Status:          Unassigned,
+		Status:          common.Unassigned,
 		OriginationTime: time.Now(),
 	}
 }
@@ -50,7 +51,7 @@ func (tpt TimePriorityTask) Priority() int64 {
 }
 
 // GetTaskID function of TimePriorityTask implements interface function for Task inteface
-func (tpt TimePriorityTask) GetTaskID() TaskID {
+func (tpt TimePriorityTask) GetTaskID() common.TaskID {
 	return tpt.ID
 }
 
@@ -65,21 +66,21 @@ func (tpt TimePriorityTask) GetOrigination() graph.Node {
 }
 
 // UpdateStatus update the current status of the task, further logic is needed
-func (tpt TimePriorityTask) UpdateStatus(status TaskStatus) error {
+func (tpt TimePriorityTask) UpdateStatus(status common.TaskStatus) error {
 	(&tpt).Status = status
 	return nil
 }
 
-func (tpt TimePriorityTask) GetStatus() TaskStatus {
+func (tpt TimePriorityTask) GetStatus() common.TaskStatus {
 	return tpt.Status
 }
-func NewTimePriorityTaskWithParameter(start, end Location) *TimePriorityTask {
+func NewTimePriorityTaskWithParameter(start, end common.Location) *TimePriorityTask {
 	id, _ := uuid.NewUUID()
 	return &TimePriorityTask{
 		ID:              id,
 		Origin:          start,
 		Destination:     end,
-		Status:          Unassigned,
+		Status:          common.Unassigned,
 		OriginationTime: time.Now(),
 	}
 }

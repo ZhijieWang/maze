@@ -13,73 +13,64 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package common
+package robot
 
 import (
-	"github.com/google/uuid"
 	"gonum.org/v1/gonum/graph"
+	"maze/common"
+	"maze/common/action"
 )
-
-// RobotID is an alias to UUID for disambiguition purpose
-type RobotID = uuid.UUID
-type Robot interface {
-	ID() RobotID
-	Init() bool
-	Run() Trace
-	Location() graph.Node
-	Plan(graph.Graph)
-	Execute(graph.Graph, TaskManager) (graph.Node, Action)
-}
 
 // SimpleRobot is a data holder struct for robot
 type simpleRobot struct {
 	// id is the UUID of the robot
-	id RobotID
+	id common.RobotID
 	// location represents the robot's current location on the graph
 	location graph.Node
 	// task represents the current work the robot is trying to carry out
-	task Task
+	task common.Task
 	// path is the current planned path to deliver the task
 	path []graph.Node
 
-	World
-	TaskManager
+	common.World
+	common.TaskManager
 }
 
 // ID returns the robot UUID
-func (r *simpleRobot) ID() RobotID {
+func (r *simpleRobot) ID() common.RobotID {
 	return r.id
 }
 
 // Run is a function that can be run in a concurrent way
-func (r *simpleRobot) Run() Trace {
+func (r *simpleRobot) Run() common.Trace {
 
 	var tick int = 1
 	if r.task == nil {
 		if r.TaskManager.HasTasks() {
 			r.task = r.TaskManager.GetTasks(1)[0]
+
 			r.World.ClaimTask(r.task.GetTaskID(), r.ID())
-			return Trace{
+			return common.Trace{
 				RobotID:   r.ID(),
 				Source:    r.location,
 				Target:    r.task.GetDestination(),
 				Timestamp: tick,
 			}
 		} else {
-			return Trace{}
+			return common.Trace{}
 		}
 	} else if r.location == r.task.GetDestination() {
-		return Trace{}
+		return common.Trace{}
 	}
 	// go to next location in path
-	return Trace{}
+	return common.Trace{}
 	//r.localWorld = worldReader.Observe(r.location)
 
 }
 func (r *simpleRobot) Location() graph.Node {
 	return r.location
 }
-func NewSimpleRobot(id RobotID, location graph.Node, world World, manager TaskManager) Robot {
+func NewSimpleRobot(id common.RobotID, location graph.Node, world common.World, manager common.TaskManager) common.Robot {
 	s := simpleRobot{
 		id,
 		location,
@@ -97,6 +88,6 @@ func (r *simpleRobot) Plan(g graph.Graph) {
 func (r *simpleRobot) Init() bool {
 	return true
 }
-func (r *simpleRobot) Execute(g graph.Graph, tm TaskManager) (graph.Node, Action) {
-	return r.Location(), Null()
+func (r *simpleRobot) Execute(g graph.Graph, tm common.TaskManager) (graph.Node, common.Action) {
+	return r.Location(), action.Null()
 }

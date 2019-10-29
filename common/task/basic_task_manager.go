@@ -1,15 +1,33 @@
-package common
+/*
+ *  Copyright (c) 2019 Zhijie (Bill) Wang
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package task
+
+import "maze/common"
 
 //BasicTaskManager implements a PassiveTaskManager interface, with procedure generation of tasks,
 // to ensure the task queue size greater than the amount of robots
 type BasicTaskManager struct {
-	taskList []Task
+	taskList []common.Task
 
-	taskMap map[TaskID]Task
+	taskMap map[common.TaskID]common.Task
 }
 
 // GetTasks implements the GetTasks method from TaskManager Interface
-func (tm *BasicTaskManager) GetTasks(i int) []Task {
+func (tm *BasicTaskManager) GetTasks(i int) []common.Task {
 
 	return tm.taskList
 }
@@ -23,13 +41,14 @@ func (tm *BasicTaskManager) GetTasks(i int) []Task {
 //}
 
 // TaskUpdate updates the status of the task, referred by taskID
-func (tm *BasicTaskManager) TaskUpdate(taskID TaskID, status TaskStatus) error {
+func (tm *BasicTaskManager) TaskUpdate(taskID common.TaskID, status common.TaskStatus) error {
 
 	t, err := tm.GetByID(taskID)
 	if err != nil {
 		// couldn't find
 		return err
 	}
+
 	err = t.UpdateStatus(status)
 	return err
 }
@@ -37,12 +56,12 @@ func (tm *BasicTaskManager) TaskUpdate(taskID TaskID, status TaskStatus) error {
 func NewBasicTaskManager() *BasicTaskManager {
 
 	tm := BasicTaskManager{}
-	tm.taskMap = make(map[TaskID]Task)
+	tm.taskMap = make(map[common.TaskID]common.Task)
 	return &tm
 }
 
 // GetByID finds the task in Queue by ID
-func (tM *BasicTaskManager) GetByID(taskID TaskID) (Task, error) {
+func (tM *BasicTaskManager) GetByID(taskID common.TaskID) (common.Task, error) {
 	return tM.taskMap[taskID], nil
 
 }
@@ -57,7 +76,7 @@ func (tM *BasicTaskManager) Less(i, j int) bool {
 
 // Pop is predefined interface funciton in the heap interface.
 // The function removes the minimum element (according to Less) from the heap and returns it. The complexity is O(log(n)) where n = h.Len(). It is equivalent to Remove(h, 0).
-func (tM *BasicTaskManager) Pop() Task {
+func (tM *BasicTaskManager) Pop() common.Task {
 	n := len(tM.taskList)
 	item := tM.taskList[n-1]
 	delete(tM.taskMap, item.GetTaskID())
@@ -66,7 +85,7 @@ func (tM *BasicTaskManager) Pop() Task {
 }
 
 // Push inserts the task item to the queue
-func (tM *BasicTaskManager) Push(x Task) {
+func (tM *BasicTaskManager) Push(x common.Task) {
 	tM.taskList = append(tM.taskList, x)
 	tM.taskMap[x.GetTaskID()] = x
 }
@@ -78,19 +97,19 @@ func (tM *BasicTaskManager) Swap(i, j int) {
 }
 
 // AddTask insert task into the tasks manager
-func (tM *BasicTaskManager) AddTask(t Task) bool {
+func (tM *BasicTaskManager) AddTask(t common.Task) bool {
 	tM.Push(t)
 	return true
 }
 
 // AddTasks insert tasks into the task manager
-func (tm *BasicTaskManager) AddTasks(t []Task) bool {
+func (tm *BasicTaskManager) AddTasks(t []common.Task) bool {
 	return true
 }
 
 // GetAllTasks
 
-func (tm *BasicTaskManager) GetAllTasks() []Task {
+func (tm *BasicTaskManager) GetAllTasks() []common.Task {
 	return tm.taskList
 }
 
@@ -99,7 +118,7 @@ func (tm *BasicTaskManager) GetBroadcastInfo() interface{} {
 	return struct{}{}
 }
 
-func (tm *BasicTaskManager) GetNext() Task {
+func (tm *BasicTaskManager) GetNext() common.Task {
 	t := tm.Pop()
 	delete(tm.taskMap, t.GetTaskID())
 	return t

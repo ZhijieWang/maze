@@ -21,6 +21,7 @@ import (
 	"log"
 	"math/rand"
 	"maze/common"
+	"maze/common/task"
 	"time"
 )
 
@@ -39,7 +40,7 @@ func (actor *TaskFeederActor) Run() {
 			default:
 				time.After(5)
 				if actor.probability > rand.Intn(100) {
-					actor.tm.AddTask(common.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Nodes().Node(), actor.w.GetGraph().Nodes().Node()))
+					actor.tm.AddTask(task.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Nodes().Node(), actor.w.GetGraph().Nodes().Node()))
 				}
 			case <-actor.comm:
 				break
@@ -96,7 +97,7 @@ type System struct {
 func (s *System) Init() {
 	s.w = CreateWarehouseWorld()
 	s.stm = CreateSimulatedTaskManager()
-	t := common.NewTimePriorityTask()
+	t := task.NewTimePriorityTask()
 	t.Origin = s.w.graph.Node(2)
 	t.Destination = s.w.graph.Node(6)
 	s.stm.AddTask(t)

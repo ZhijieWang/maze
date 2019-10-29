@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package common_test
+package task_test
 
 import (
 	"maze/common"
+	"maze/common/task"
 	"testing"
 )
 
 func TestTaskManagerPushAtomicSuccess(t *testing.T) {
-	var tq common.TaskManager = common.NewBasicTaskManager()
-	tq.AddTask(common.NewTimePriorityTask())
+	var tq common.TaskManager = task.NewBasicTaskManager()
+	tq.AddTask(task.NewTimePriorityTask())
 
 	if len(tq.GetAllTasks()) != 1 {
 		t.Errorf("Insert one task into queue, expect queue size to be 1\n, current length is %d", len(tq.GetAllTasks()))
@@ -31,9 +32,9 @@ func TestTaskManagerPushAtomicSuccess(t *testing.T) {
 }
 
 func TestTaskManagerPushMaintainOrder(t *testing.T) {
-	tq := common.NewBasicTaskManager()
-	t1 := common.NewTimePriorityTask()
-	t2 := common.NewTimePriorityTask()
+	tq := task.NewBasicTaskManager()
+	t1 := task.NewTimePriorityTask()
+	t2 := task.NewTimePriorityTask()
 	tq.Push(t2)
 	tq.Push(t1)
 	if t1 == t2 {

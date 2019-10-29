@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package common_test
+package world_test
 
 import (
 	"maze/common"
+	"maze/common/robot"
+	"maze/common/task"
+	"maze/common/world"
 	"testing"
 
 	"github.com/google/uuid"
 )
 
 func TestCanMakeWorld(t *testing.T) {
-	g := common.CreateWorld(0, common.NewBasicTaskManager())
+	g := world.CreateWorld(0, task.NewBasicTaskManager())
 	if len(g.GetRobots()) != 0 {
 		t.Errorf("Expected Empty Start, there should be no robots")
 	}
@@ -34,10 +37,10 @@ func TestCanMakeWorld(t *testing.T) {
 }
 
 func TestCanAssignRobot(t *testing.T) {
-	g := common.CreateWorld(2, common.NewBasicTaskManager())
+	g := world.CreateWorld(2, task.NewBasicTaskManager())
 	numBots := len(g.GetRobots())
 	id, _ := uuid.NewUUID()
-	r := common.NewSimpleRobot(id, g.GetGraph().Node(0), g, common.NewBasicTaskManager())
+	r := robot.NewSimpleRobot(id, g.GetGraph().Node(0), g, task.NewBasicTaskManager())
 	g.AddRobot(r)
 	rs := g.GetRobots()
 	if len(rs) != (numBots + 1) {
@@ -46,14 +49,14 @@ func TestCanAssignRobot(t *testing.T) {
 }
 
 func TestCanModifyTasks(t *testing.T) {
-	g := common.CreateWorld(2, common.NewBasicTaskManager())
-	task := make([]common.Task, 0)
-	task = append(task, common.TimePriorityTask{})
-	g.SetTasks(task)
+	g := world.CreateWorld(2, task.NewBasicTaskManager())
+	tasks := make([]common.Task, 0)
+	tasks = append(tasks, task.TimePriorityTask{})
+	g.SetTasks(tasks)
 	if len(g.GetTasks()) == 0 {
 		t.Errorf("Expect the task list to be mutable\n")
 	}
-	if g.GetTasks()[0] != task[0] {
+	if g.GetTasks()[0] != tasks[0] {
 		t.Errorf("Expect the Task setter method to work, but failed")
 	}
 }
