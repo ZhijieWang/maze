@@ -20,8 +20,10 @@ import (
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
+	"log"
 	"maze/common"
 	"maze/common/action"
+	"sync"
 )
 
 // simpleWarehouseRobot is a data holder struct for robot
@@ -68,6 +70,9 @@ func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) c
 		start.SetChild(action.CreateBeginTaskAction(location))
 		current = start.GetChild()
 	}
+	//if task.GetDestination()== task.GetOrigination() {
+	//	panic("Start and End overlaps")
+	//}
 	p, _ := GetPath(task.GetOrigination(), task.GetDestination(), g)
 	current.SetChild(action.CreateMoveActionWithPath(task.GetOrigination(), task.GetDestination(), p))
 	current.GetChild().SetChild(action.CreateEndTaskAction(task.GetDestination()))
@@ -108,7 +113,7 @@ func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (gr
 		r.act = r.act.GetChild()
 	case common.ActionTypeEndTask:
 		// mark task complete and remove self task\
-
+		log.Printf("%+v completed",r.task)
 		tm.TaskUpdate(r.task.GetTaskID(), common.Completed)
 		r.task = nil
 		r.act = r.act.GetChild()
@@ -122,10 +127,13 @@ func (r *simpleWarehouseRobot) Execute(g graph.Graph, tm common.TaskManager) (gr
 	return r.location, r.act
 }
 func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
+
 	pt, ok := path.BellmanFordFrom(start, g)
 	if ok {
 		p, _ := pt.To(end.ID())
-
+		if len(p) == 0{
+			panic ("No Path")
+		}
 		return p[1:], nil
 	} else {
 		return nil, errors.New("no positive cycle")
@@ -181,7 +189,7 @@ func (r *simpleWarehouseRobot) Init() bool {
 }
 
 type WarehouseWorld struct {
-	graph  *simple.DirectedGraph
+	graph  *simple.UndirectedGraph
 	robots map[common.RobotID]common.Robot
 }
 
@@ -220,7 +228,7 @@ func (w *WarehouseWorld) ClaimTask(tid common.TaskID, rid common.RobotID) {
 func CreateWarehouseWorld() *WarehouseWorld {
 
 	w := &WarehouseWorld{
-		simple.NewDirectedGraph(),
+		simple.NewUndirectedGraph(),
 		make(map[common.RobotID]common.Robot),
 	}
 	for i := 1; i < 13; i++ {
@@ -371,4 +379,113 @@ func (stm *SimulatedTaskManager) FinishedCount() int {
 
 func (stm *SimulatedTaskManager) ActiveCount() int {
 	return len(stm.active)
+}
+
+type SimulatedTaskManagerSync struct{
+	tasks sync.Map
+	active sync.Map
+	archive sync.Map
+}
+func (stm *SimulatedTaskManagerSync) GetBroadcastInfo() interface{} {
+	panic("not implemented")
+}
+
+func (stm *SimulatedTaskManagerSync) GetAllTasks() []common.Task {
+	var values []common.Task
+
+	stm.tasks.Range(func(key interface{}, value interface{}) (bool){  values = append(values, value.(common.Task)); return true} )
+
+	return values
+}
+
+func (stm *SimulatedTaskManagerSync) GetNext() common.Task {
+
+	tasks := stm.GetAllTasks()
+	if len(tasks) ==0{
+		return nil
+	}else{
+		return tasks[0]
+	}
+}
+
+func (stm *SimulatedTaskManagerSync) GetTasks(n int) []common.Task {
+	return stm.GetAllTasks()[:n]
+}
+
+func (stm *SimulatedTaskManagerSync) TaskUpdate(taskID common.TaskID, status common.TaskStatus) error {
+
+	switch status {
+
+	case common.Completed:
+		if t, ok := stm.active.Load(taskID); ok {
+			stm.archive.Store(taskID, t)
+			stm.active.Delete( taskID)
+			return nil
+		} else {
+			return errors.New("status can't jump from UnAssigned to Completed")
+		}
+
+	case common.Assigned:
+		if t, ok := stm.tasks.Load(taskID); ok {
+			stm.active.Store(taskID , t)
+			stm.tasks.Delete( taskID)
+			return nil
+		} else {
+			return errors.New("task not found")
+		}
+
+	default:
+		return nil
+	}
+}
+
+func (stm *SimulatedTaskManagerSync) AddTask(t common.Task) bool {
+	if t.GetStatus() == common.Completed {
+		return false
+	} else {
+		_,ok:=stm.tasks.LoadOrStore(t.GetTaskID(), t)
+		if ok {
+			//loaded
+			return false
+		}else{
+			// stored
+			return true
+		}
+
+	}
+}
+
+func (stm *SimulatedTaskManagerSync) AddTasks(tList []common.Task) bool {
+	result := true
+	for _, t := range tList {
+		result = result && stm.AddTask(t)
+	}
+	return result
+}
+
+func (stm *SimulatedTaskManagerSync) HasTasks() bool {
+	return len(stm.GetAllTasks()) != 0
+}
+func (stm *SimulatedTaskManagerSync) FinishedCount() int {
+	var values []common.Task
+
+	stm.archive.Range(func(key interface{}, value interface{}) (bool){  values = append(values, value.(common.Task)); return true} )
+
+	return len(values)
+}
+
+func (stm *SimulatedTaskManagerSync) ActiveCount() int {
+	var values []common.Task
+
+	stm.active.Range(func(key interface{}, value interface{}) (bool){  values = append(values, value.(common.Task)); return true} )
+
+	return len(values)
+}
+
+func CreateSimulatedTaskManagerSync() *SimulatedTaskManagerSync {
+	return &SimulatedTaskManagerSync{
+		sync.Map{},
+		sync.Map{},
+		sync.Map{},
+	}
 }

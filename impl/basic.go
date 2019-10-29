@@ -29,7 +29,7 @@ type TaskFeederActor struct {
 	probability int
 	frequency   int
 	w           common.World
-	tm          *SimulatedTaskManager
+	tm          *SimulatedTaskManagerSync
 	comm        chan interface{}
 }
 
@@ -40,7 +40,11 @@ func (actor *TaskFeederActor) Run() {
 			default:
 				time.After(5)
 				if actor.probability > rand.Intn(100) {
-					actor.tm.AddTask(task.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Nodes().Node(), actor.w.GetGraph().Nodes().Node()))
+					m:=actor.w.GetGraph().Nodes().Len()
+					t:=task.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)),actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)))
+					actor.tm.AddTask(t)
+					//log.Printf("Adding task %+v", t)
+
 				}
 			case <-actor.comm:
 				break
@@ -90,16 +94,17 @@ func (actor *ActorRef) Stop() {
 
 type System struct {
 	w    *WarehouseWorld
-	stm  *SimulatedTaskManager
+	stm  *SimulatedTaskManagerSync
 	refs []Actor
 }
 
 func (s *System) Init() {
 	s.w = CreateWarehouseWorld()
-	s.stm = CreateSimulatedTaskManager()
+	s.stm = CreateSimulatedTaskManagerSync()
 	t := task.NewTimePriorityTask()
 	t.Origin = s.w.graph.Node(2)
 	t.Destination = s.w.graph.Node(6)
+
 	s.stm.AddTask(t)
 
 }
@@ -122,7 +127,7 @@ func (s System) Stop() {
 
 func (s *System) RunTillStop() {
 	for {
-		if s.stm.HasTasks() || s.stm.ActiveCount() > 0 {
+		if s.stm.HasTasks() || s.stm.ActiveCount()>0 {
 
 		} else {
 			log.Print("Stopping\n")
