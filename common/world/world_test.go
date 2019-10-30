@@ -26,7 +26,7 @@ import (
 )
 
 func TestCanMakeWorld(t *testing.T) {
-	g := world.CreateWorld(0, task.NewBasicTaskManager())
+	g := world.CreateWorld(task.NewBasicTaskManager())
 	if len(g.GetRobots()) != 0 {
 		t.Errorf("Expected Empty Start, there should be no robots")
 	}
@@ -37,7 +37,7 @@ func TestCanMakeWorld(t *testing.T) {
 }
 
 func TestCanAssignRobot(t *testing.T) {
-	g := world.CreateWorld(2, task.NewBasicTaskManager())
+	g := world.CreateWorld(task.NewBasicTaskManager())
 	numBots := len(g.GetRobots())
 	id, _ := uuid.NewUUID()
 	r := robot.NewSimpleRobot(id, g.GetGraph().Node(0), g, task.NewBasicTaskManager())
@@ -49,7 +49,7 @@ func TestCanAssignRobot(t *testing.T) {
 }
 
 func TestCanModifyTasks(t *testing.T) {
-	g := world.CreateWorld(2, task.NewBasicTaskManager())
+	g := world.CreateWorld(task.NewBasicTaskManager())
 	tasks := make([]common.Task, 0)
 	tasks = append(tasks, task.TimePriorityTask{})
 	g.SetTasks(tasks)
