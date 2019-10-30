@@ -21,7 +21,9 @@ import (
 	"log"
 	"math/rand"
 	"maze/common"
+	"maze/common/robot"
 	"maze/common/task"
+	"maze/common/world"
 	"time"
 )
 
@@ -29,7 +31,7 @@ type TaskFeederActor struct {
 	probability int
 	frequency   int
 	w           common.World
-	tm          *SimulatedTaskManagerSync
+	tm          *task.SimulatedTaskManagerSync
 	comm        chan interface{}
 }
 
@@ -40,8 +42,8 @@ func (actor *TaskFeederActor) Run() {
 			default:
 				time.After(5)
 				if actor.probability > rand.Intn(100) {
-					m:=actor.w.GetGraph().Nodes().Len()
-					t:=task.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)),actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)))
+					m := actor.w.GetGraph().Nodes().Len()
+					t := task.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)), actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)))
 					actor.tm.AddTask(t)
 					//log.Printf("Adding task %+v", t)
 
@@ -67,7 +69,7 @@ type Actor interface {
 }
 type ActorRef struct {
 	comm  chan interface{}
-	robot *simpleWarehouseRobot
+	robot common.Robot
 }
 
 func (actor *ActorRef) Run() {
@@ -93,24 +95,24 @@ func (actor *ActorRef) Stop() {
 }
 
 type System struct {
-	w    *WarehouseWorld
-	stm  *SimulatedTaskManagerSync
+	w    *world.WarehouseWorld
+	stm  *task.SimulatedTaskManagerSync
 	refs []Actor
 }
 
 func (s *System) Init() {
-	s.w = CreateWarehouseWorld()
-	s.stm = CreateSimulatedTaskManagerSync()
+	s.w = world.CreateWarehouseWorld()
+	s.stm = task.CreateSimulatedTaskManagerSync()
 	t := task.NewTimePriorityTask()
-	t.Origin = s.w.graph.Node(2)
-	t.Destination = s.w.graph.Node(6)
+	t.Origin = s.w.GetGraph().Node(2)
+	t.Destination = s.w.GetGraph().Node(6)
 
 	s.stm.AddTask(t)
 
 }
 func (s *System) Start() {
 
-	s.refs = append(s.refs, &ActorRef{make(chan interface{}), NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w, s.stm)})
+	s.refs = append(s.refs, &ActorRef{make(chan interface{}), robot.NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w, s.stm)})
 	for _, i := range s.refs {
 		i.Init()
 	}
@@ -127,7 +129,7 @@ func (s System) Stop() {
 
 func (s *System) RunTillStop() {
 	for {
-		if s.stm.HasTasks() || s.stm.ActiveCount()>0 {
+		if s.stm.HasTasks() || s.stm.ActiveCount() > 0 {
 
 		} else {
 			log.Print("Stopping\n")
