@@ -44,6 +44,7 @@ type Action interface {
 	HasChild() bool
 	GetChild() Action
 	SetChild(Action)
+	Equal(Action) bool
 }
 
 type DurationAction interface {
@@ -58,8 +59,9 @@ type Robot interface {
 	Init() bool
 	Run() Trace
 	Location() graph.Node
-	Plan(graph.Graph)
-	Execute(graph.Graph, TaskManager) (graph.Node, Action)
+	Plan()
+	Execute() (graph.Node, Action)
+	GetStatus() (Action, Task)
 }
 
 // Trace is data structure to hold data that can be used for path planning

@@ -82,12 +82,16 @@ func NewSimpleRobot(id common.RobotID, location graph.Node, world common.World, 
 	return &s
 }
 
-func (r *simpleRobot) Plan(g graph.Graph) {
+func (r *simpleRobot) Plan() {
 
 }
 func (r *simpleRobot) Init() bool {
 	return true
 }
-func (r *simpleRobot) Execute(g graph.Graph, tm common.TaskManager) (graph.Node, common.Action) {
+func (r *simpleRobot) Execute() (graph.Node, common.Action) {
 	return r.Location(), action.Null()
+}
+
+func (r *simpleRobot) GetStatus() (common.Action, common.Task) {
+	return action.Null(), nil
 }
