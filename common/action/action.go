@@ -19,6 +19,7 @@ package action
 import (
 	"gonum.org/v1/gonum/graph"
 	"maze/common"
+	"reflect"
 )
 
 type MoveAction struct {
@@ -44,6 +45,15 @@ func (a *MoveAction) SetChild(c common.Action) {
 func (a *MoveAction) GetContent() interface{} {
 	return a
 }
+func (a *MoveAction) Equal(other common.Action) bool {
+	if a.GetType() == a.GetType() {
+		cast := other.(*MoveAction)
+		return cast.Start == a.Start && cast.End == a.End && reflect.DeepEqual(cast.Path, a.Path) && cast.child.Equal(a.child)
+	} else {
+		return false
+	}
+}
+
 func CreateMoveAction(start common.Location, end common.Location) *MoveAction {
 	return &MoveAction{nil, start, end, nil, common.PendingStatus}
 }
@@ -80,6 +90,14 @@ func (a *BeginTaskAction) GetContent() interface{} {
 func (a *BeginTaskAction) SetChild(c common.Action) {
 	a.child = c
 }
+func (a *BeginTaskAction) Equal(other common.Action) bool {
+	if a.GetType() == a.GetType() {
+		cast := other.(*BeginTaskAction)
+		return cast.here == a.here && cast.child.Equal(a.child)
+	} else {
+		return false
+	}
+}
 
 type EndTaskAction struct {
 	child common.Action
@@ -103,6 +121,14 @@ func (a *EndTaskAction) SetChild(c common.Action) {
 }
 func CreateEndTaskAction(here common.Location) *EndTaskAction {
 	return &EndTaskAction{nil, here}
+}
+func (a *EndTaskAction) Equal(other common.Action) bool {
+	if a.GetType() == a.GetType() {
+		cast := other.(*EndTaskAction)
+		return cast.here == a.here && cast.child.Equal(a.child)
+	} else {
+		return false
+	}
 }
 
 type NullAction struct {
@@ -129,4 +155,8 @@ func (n NullAction) SetChild(a common.Action) {
 
 func Null() NullAction {
 	return NullAction{}
+}
+func (a NullAction) Equal(other common.Action) bool {
+	return a.GetType() == a.GetType()
+
 }
