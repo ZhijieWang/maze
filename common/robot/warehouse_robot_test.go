@@ -166,21 +166,22 @@ func TestRobotCanExecuteTaskPlan(t *testing.T) {
 		t.Errorf("Robot Plan picked up wrong task, expecting %+v, actual %+v", t3, rTask)
 		t.Fail()
 	}
+	r.Execute()
+	act = act.GetChild()
+	rAct, rTask = r.GetStatus()
+	if rAct.Equal(act) {
 
-	//
-	//if node == t3.Origin && act.GetType() == common.ActionTypeStartTask {
-	//
-	//} else {
-	//	t.Errorf("target should be the task start location, actual target is %+v", node)
-	//}
-	//r.act = act
-	//r.location = node
-	//node, act = r.Execute(w.GetGraph(), stm)
-	//if node == t3.GetOrigination() && act.GetType() == common.ActionTypeMove && act.(*action.MoveAction).End == t3.GetDestination() {
-	//
-	//} else {
-	//	t.Errorf("Failed to prepare for next step of move after begin task")
-	//}
+	} else {
+		t.Errorf("Robot Execute picked up wrong act, expecting %+v, actual %+v", act, rAct)
+		t.Fail()
+	}
+	if rTask == t3 {
+
+	} else {
+		t.Errorf("Robot Execute picked up wrong task, expecting %+v, actual %+v", t3, rTask)
+		t.Fail()
+	}
+
 }
 
 //
