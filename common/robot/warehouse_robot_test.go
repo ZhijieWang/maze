@@ -184,60 +184,62 @@ func TestRobotCanExecuteTaskPlan(t *testing.T) {
 
 }
 
-//
-//func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
-//	setup()
-//	addT3()
-//	r := robots[0]
-//	trace := r.Run()
-//
-//	if trace.Source == w.GetGraph().Node(1) && trace.Target == w.GetGraph().Node(2) {
-//		// Move one step
-//	} else {
-//		t.Errorf("First step should be moving from 1 to 2, actual trace is %+v", trace)
-//		t.Fail()
-//	}
-//	if r.act.GetType() == common.ActionTypeStartTask {
-//		// a Move, the action next should be beging task
-//	} else {
-//		t.Errorf("After 1 step move, the next pending task should be begin task, but actual is %v : %+v", r.act.GetType(), r.act)
-//		t.Fail()
-//	}
-//	trace = r.Run()
-//
-//	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetOrigination() {
-//		// execute beging task action, stay at the source node
-//	} else {
-//		t.Errorf("Exepct this step to perform begin task step. Which remains at the task start position")
-//		t.Fail()
-//	}
-//	if r.act.GetType() == common.ActionTypeMove && r.act.(*action.MoveAction).End == t3.GetDestination() {
-//	} else {
-//		t.Errorf("Expect next step move to target location after execute beging action.\n What is the actual action? %+v", r.act)
-//	}
-//	trace = r.Run()
-//	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetDestination() {
-//
-//	} else {
-//		t.Errorf("Should move to final destination with execution. What actual move was %+v", trace)
-//	}
-//	if r.act.GetType() == common.ActionTypeEndTask {
-//		// next should end execution
-//	} else {
-//		t.Errorf("Should plan to end the task execution")
-//	}
-//	trace = r.Run()
-//	if trace.Source == t3.GetDestination() && trace.Target == t3.GetDestination() {
-//		// wrap up task
-//	} else {
-//		t.Errorf("Execte end task ")
-//	}
-//	if r.act == action.Null() {
-//		// Should be nothing left
-//	} else {
-//		t.Errorf("Should release the robot to idle. Actual: %+v", r.act)
-//	}
-//}
+func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
+	setup()
+	addT3()
+	r := robots[0]
+	trace := r.Run()
+	rAct, _ := r.GetStatus()
+	if trace.Source == w.GetGraph().Node(1) && trace.Target == w.GetGraph().Node(2) {
+		// Move one step
+	} else {
+		t.Errorf("First step should be moving from 1 to 2, actual trace is %+v", trace)
+		t.Fail()
+	}
+
+	if rAct.GetType() == common.ActionTypeStartTask {
+		// a Move, the action next should be beging task
+	} else {
+		t.Errorf("After 1 step move, the next pending task should be begin task, but actual is %v : %+v", rAct.GetType(), rAct)
+		t.Fail()
+	}
+	trace = r.Run()
+	rAct, _ = r.GetStatus()
+	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetOrigination() {
+		// execute beging task action, stay at the source node
+	} else {
+		t.Errorf("Exepct this step to perform begin task step. Which remains at the task start position")
+		t.Fail()
+	}
+	if rAct.GetType() == common.ActionTypeMove && rAct.(*action.MoveAction).End == t3.GetDestination() {
+	} else {
+		t.Errorf("Expect next step move to target location after execute beging action.\n What is the actual action? %+v", rAct)
+	}
+	trace = r.Run()
+	rAct, _ = r.GetStatus()
+	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetDestination() {
+
+	} else {
+		t.Errorf("Should move to final destination with execution. What actual move was %+v", trace)
+	}
+	if rAct.GetType() == common.ActionTypeEndTask {
+		// next should end execution
+	} else {
+		t.Errorf("Should plan to end the task execution")
+	}
+	trace = r.Run()
+	rAct, _ = r.GetStatus()
+	if trace.Source == t3.GetDestination() && trace.Target == t3.GetDestination() {
+		// wrap up task
+	} else {
+		t.Errorf("Execte end task ")
+	}
+	if rAct == action.Null() {
+		// Should be nothing left
+	} else {
+		t.Errorf("Should release the robot to idle. Actual: %+v", rAct)
+	}
+}
 
 func TestRobotCanExecuteMoveInSimulation(t *testing.T) {
 
