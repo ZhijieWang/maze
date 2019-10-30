@@ -20,7 +20,6 @@ import (
 	"log"
 	"maze/common"
 	"maze/common/robot"
-	"maze/common/simulation"
 	"maze/common/task"
 	"maze/common/world"
 	"testing"
@@ -33,7 +32,7 @@ type centralizedSimulation struct {
 	tm    common.TaskManager
 }
 
-func CreateCentralizedSimulation() simulation.Simulation {
+func CreateCentralizedSimulation() common.Simulation {
 
 	var c = centralizedSimulation{}
 	c.tm = task.NewBasicTaskManager()
@@ -56,7 +55,10 @@ func CreateCentralizedSimulation() simulation.Simulation {
 	return c
 }
 
-func (sim centralizedSimulation) Run(obs simulation.Observer) error {
+func (sim centralizedSimulation) Init() {
+
+}
+func (sim centralizedSimulation) Run(obs common.Observer) error {
 	for _, i := range sim.world.GetRobots() {
 		trace := i.Run()
 		sim.world.UpdateRobot(i)

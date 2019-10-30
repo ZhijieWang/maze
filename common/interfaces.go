@@ -131,3 +131,18 @@ type World interface {
 	SetTasks(tasks []Task) bool
 	ClaimTask(tid TaskID, rid RobotID)
 }
+type Observer interface {
+	OnNotify(data interface{})
+}
+type Event interface {
+}
+type Notifier interface {
+	Register(Observer)
+	Deregister(Observer)
+	Notify(Event)
+}
+type Simulation interface {
+	Init()
+	Run(obs Observer) error
+	Stop() bool
+}

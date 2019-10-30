@@ -16,17 +16,126 @@
 
 package simulation
 
-type Observer interface {
-	OnNotify(data interface{})
+import (
+	"github.com/google/uuid"
+	"log"
+	"math/rand"
+	"maze/common"
+	"maze/common/robot"
+	"maze/common/task"
+	"maze/common/world"
+	"time"
+)
+
+type TaskFeederActor struct {
+	probability int
+	frequency   int
+	w           common.World
+	tm          *task.SimulatedTaskManagerSync
+	comm        chan interface{}
 }
-type Event interface {
+
+func (actor *TaskFeederActor) Run() {
+	go func() {
+		for {
+			select {
+			default:
+				time.After(5)
+				if actor.probability > rand.Intn(100) {
+					m := actor.w.GetGraph().Nodes().Len()
+					t := task.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)), actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)))
+					actor.tm.AddTask(t)
+					//log.Printf("Adding task %+v", t)
+
+				}
+			case <-actor.comm:
+				break
+			}
+
+		}
+	}()
 }
-type Notifier interface {
-	Register(Observer)
-	Deregister(Observer)
-	Notify(Event)
+func (actor *TaskFeederActor) Init() {
+
 }
-type Simulation interface {
-	Run(obs Observer) error
-	Stop() bool
+func (actor *TaskFeederActor) Stop() {
+	close(actor.comm)
+}
+
+type Actor interface {
+	Init()
+	Run()
+	Stop()
+}
+type ActorRef struct {
+	comm  chan interface{}
+	robot common.Robot
+}
+
+func (actor *ActorRef) Run() {
+
+	go func() {
+		for {
+			select {
+			default:
+				actor.robot.Run()
+			case <-actor.comm:
+				break
+			}
+		}
+		return
+	}()
+}
+func (actor *ActorRef) Init() {
+	actor.robot.Init()
+
+}
+func (actor *ActorRef) Stop() {
+	close(actor.comm)
+}
+
+type System struct {
+	w    *world.WarehouseWorld
+	stm  *task.SimulatedTaskManagerSync
+	refs []Actor
+}
+
+func (s *System) Init() {
+	s.w = world.CreateWarehouseWorld()
+	s.stm = task.CreateSimulatedTaskManagerSync()
+	t := task.NewTimePriorityTask()
+	t.Origin = s.w.GetGraph().Node(2)
+	t.Destination = s.w.GetGraph().Node(6)
+
+	s.stm.AddTask(t)
+
+}
+func (s *System) Start(observer common.Observer) {
+
+	s.refs = append(s.refs, &ActorRef{make(chan interface{}), robot.NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w, s.stm)})
+	for _, i := range s.refs {
+		i.Init()
+	}
+	s.refs = append(s.refs, &TaskFeederActor{30, 5, s.w, s.stm, make(chan interface{})})
+	for _, i := range s.refs {
+		go i.Run()
+	}
+}
+func (s System) Stop() bool {
+	for _, i := range s.refs {
+		i.Stop()
+	}
+	return true
+}
+
+func (s *System) RunTillStop() {
+	for {
+		if s.stm.HasTasks() || s.stm.ActiveCount() > 0 {
+
+		} else {
+			log.Print("Stopping\n")
+			s.Stop()
+			break
+		}
+	}
 }
