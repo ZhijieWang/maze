@@ -16,10 +16,10 @@
 package robot
 
 import (
+	"fmt"
 	"gonum.org/v1/gonum/graph"
 	"maze/common/methods"
 
-	"log"
 	"maze/common"
 	"maze/common/action"
 )
@@ -38,7 +38,6 @@ type simpleWarehouseRobot struct {
 	act  common.Action
 
 	common.World // a place to read world,
-	common.TaskManager
 }
 
 // ID returns the robot UUID
@@ -55,11 +54,11 @@ func (r *simpleWarehouseRobot) Stop() {
 func (r *simpleWarehouseRobot) Plan() {
 	if r.act.GetType() == common.ActionTypeNull {
 		if r.task == nil {
-			if r.TaskManager.HasTasks() {
-				t := r.TaskManager.GetNext()
-				err := r.TaskManager.TaskUpdate(t.GetTaskID(), common.Assigned)
-				if err != nil {
-					panic("Failed to update task")
+			if r.World.HasTasks() {
+				t := r.World.GetNextTask()
+				success, err := r.World.ClaimTask(t.GetTaskID(), r.id)
+				if !success {
+					panic(fmt.Sprintf("Failed to update task, %+v", err))
 				}
 				r.act = methods.PlanTaskAction(r.World.GetGraph(), r.location, t)
 				r.task = t
@@ -92,12 +91,13 @@ func (r *simpleWarehouseRobot) Execute() (graph.Node, common.Action) {
 		}
 	case common.ActionTypeStartTask:
 
-		r.TaskManager.TaskUpdate(r.task.GetTaskID(), common.Assigned)
 		r.act = r.act.GetChild()
 	case common.ActionTypeEndTask:
 		// mark task complete and remove self task\
-		log.Printf("%+v completed", r.task)
-		r.TaskManager.TaskUpdate(r.task.GetTaskID(), common.Completed)
+		err := r.World.TaskUpdate(r.task.GetTaskID(), common.Completed)
+		if err != nil {
+			panic(err)
+		}
 		r.task = nil
 		r.act = r.act.GetChild()
 	case common.ActionTypeNull:
@@ -128,7 +128,7 @@ func (r *simpleWarehouseRobot) Run() common.Trace {
 	return trace
 	// r.localWorld = worldReader.Observe(r.location)
 }
-func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node, world common.World, manager common.TaskManager) *simpleWarehouseRobot {
+func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node, world common.World) *simpleWarehouseRobot {
 	s := simpleWarehouseRobot{
 		id,
 		location,
@@ -137,7 +137,6 @@ func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node, world commo
 		0,
 		action.Null(),
 		world,
-		manager,
 	}
 	return &s
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package robot_test
+package test_test
 
 import (
 	"maze/common"
@@ -39,37 +39,37 @@ var (
 )
 
 func setup() {
-	w = world.CreateWarehouseWorld()
-	stm = task.CreateSimulatedTaskManager()
 
+	stm = task.CreateSimulatedTaskManager()
+	w = world.CreateWarehouseWorldWithTaskManager(stm)
 	robots = []common.Robot{}
-	robots = append(robots, robot.NewSimpleWarehouseRobot(uuid.New(), w.GetGraph().Node(1), w, stm))
-	robots = append(robots, robot.NewSimpleWarehouseRobot(uuid.New(), w.GetGraph().Node(1), w, stm))
+	robots = append(robots, robot.NewSimpleWarehouseRobot(uuid.New(), w.GetGraph().Node(1), w))
+	robots = append(robots, robot.NewSimpleWarehouseRobot(uuid.New(), w.GetGraph().Node(1), w))
 }
 func addT1() {
 	t1 = task.NewTimePriorityTask()
 	t1.Origin = w.GetGraph().Node(1)
 	t1.Destination = w.GetGraph().Node(2)
-	stm.AddTask(t1)
+	w.AddTask(t1)
 }
 func addT2() {
 	t2 = task.NewTimePriorityTask()
 	t2.Origin = w.GetGraph().Node(1)
 	t2.Destination = w.GetGraph().Node(6)
-	stm.AddTask(t2)
+	w.AddTask(t2)
 }
 func addT3() {
 	t3 = task.NewTimePriorityTask()
 	t3.Origin = w.GetGraph().Node(2)
 	t3.Destination = w.GetGraph().Node(6)
-	stm.AddTask(t3)
+	w.AddTask(t3)
 
 }
 func addT4() {
 	t4 = task.NewTimePriorityTask()
 	t4.Origin = w.GetGraph().Node(2)
 	t4.Destination = w.GetGraph().Node(9)
-	stm.AddTask(t4)
+	w.AddTask(t4)
 }
 
 func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
@@ -77,12 +77,6 @@ func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
 	setup()
 	addT1()
 	addT2()
-	for _, i := range robots {
-		if i.Location() == nil {
-			t.Errorf("Robot location is nil")
-			t.FailNow()
-		}
-	}
 	// cycle to claim tasks
 
 	for _, i := range robots {
@@ -91,7 +85,7 @@ func TestRobotClaimTaskMoveAndDelivery(t *testing.T) {
 	for _, i := range robots {
 		i.Run()
 	}
-	if len(stm.GetAllTasks()) > 1 {
+	if len(w.GetAllTasks()) > 1 {
 		t.Errorf("Robot Failed to claim tasks")
 	}
 	for _, i := range robots {
@@ -198,7 +192,7 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	}
 
 	if rAct.GetType() == common.ActionTypeStartTask {
-		// a Move, the action next should be beging task
+		// a Move, the action next should be begin task
 	} else {
 		t.Errorf("After 1 step move, the next pending task should be begin task, but actual is %v : %+v", rAct.GetType(), rAct)
 		t.Fail()
@@ -206,7 +200,7 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	trace = r.Run()
 	rAct, _ = r.GetStatus()
 	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetOrigination() {
-		// execute beging task action, stay at the source node
+		// execute begin task action, stay at the source node
 	} else {
 		t.Errorf("Exepct this step to perform begin task step. Which remains at the task start position")
 		t.Fail()
@@ -247,6 +241,7 @@ func TestRobotCanExecuteMoveInSimulation(t *testing.T) {
 
 	addT3()
 	addT4()
+
 	if len(robots) <= 0 {
 		t.Error("Not enough robots")
 	}
@@ -263,25 +258,25 @@ func TestRobotCanExecuteMoveInSimulation(t *testing.T) {
 		trace = append(trace, i.Run())
 	}
 
-	if len(stm.GetAllTasks()) > 1 {
+	if len(w.GetAllTasks()) > 1 {
 		t.Errorf("Robot Failed to claim tasks")
 	}
-	tclaimed := false
+	claimed := false
 	for _, ts := range trace {
 		if ts.Target != nil && ts.Target == t3.GetOrigination() {
-			tclaimed = true
+			claimed = true
 		}
 	}
-	if !tclaimed {
+	if !claimed {
 		t.Error("Failed to emit trace of t1")
 	}
-	tclaimed = false
+	claimed = false
 	for _, ts := range trace {
 		if ts.Target != nil && ts.Target == t4.GetOrigination() {
-			tclaimed = true
+			claimed = true
 		}
 	}
-	if !tclaimed {
+	if !claimed {
 		t.Error("Failed to emit trace of t2")
 	}
 	if stm.ActiveCount() != 2 {
@@ -301,7 +296,7 @@ func TestRobotCanExecuteMoveInSimulation(t *testing.T) {
 	for _, i := range robots {
 		i.Run()
 	}
-	if len(stm.GetAllTasks()) != 0 {
+	if len(w.GetAllTasks()) != 0 {
 		t.Error("Added two basic tasks, each should take 1 cycle to finish. Yet, it still is not done")
 	}
 	if stm.FinishedCount() != 2 || stm.ActiveCount() != 0 {

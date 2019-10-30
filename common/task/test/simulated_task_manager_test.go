@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package task_test
+package test_test
 
 import (
 	"github.com/google/uuid"
@@ -30,18 +30,16 @@ var (
 	stm    *task.SimulatedTaskManager
 	t1     *task.TimePriorityTask
 	t2     *task.TimePriorityTask
-	t3     *task.TimePriorityTask
-	t4     *task.TimePriorityTask
 	robots []common.Robot
 )
 
 func setup() {
-	w = world.CreateWarehouseWorld()
 	stm = task.CreateSimulatedTaskManager()
+	w = world.CreateWarehouseWorldWithTaskManager(stm)
 
 	robots = []common.Robot{}
-	robots = append(robots, robot.NewSimpleWarehouseRobot(uuid.New(), w.GetGraph().Node(1), w, stm))
-	robots = append(robots, robot.NewSimpleWarehouseRobot(uuid.New(), w.GetGraph().Node(1), w, stm))
+	robots = append(robots, robot.NewSimpleWarehouseRobot(uuid.New(), w.GetGraph().Node(1), w))
+	robots = append(robots, robot.NewSimpleWarehouseRobot(uuid.New(), w.GetGraph().Node(1), w))
 }
 func addT1() {
 	t1 = task.NewTimePriorityTask()
@@ -54,19 +52,6 @@ func addT2() {
 	t2.Origin = w.GetGraph().Node(1)
 	t2.Destination = w.GetGraph().Node(6)
 	stm.AddTask(t2)
-}
-func addT3() {
-	t3 = task.NewTimePriorityTask()
-	t3.Origin = w.GetGraph().Node(2)
-	t3.Destination = w.GetGraph().Node(6)
-	stm.AddTask(t3)
-
-}
-func addT4() {
-	t4 = task.NewTimePriorityTask()
-	t4.Origin = w.GetGraph().Node(2)
-	t4.Destination = w.GetGraph().Node(9)
-	stm.AddTask(t4)
 }
 
 func TestHasTasks(t *testing.T) {
@@ -106,9 +91,10 @@ func TestHasTasks(t *testing.T) {
 
 func TestRobotClaimTask(t *testing.T) {
 	setup()
-	stm.AddTask(t1)
+	addT1()
 	id, _ := uuid.NewUUID()
-	r := robot.NewSimpleWarehouseRobot(id, w.GetGraph().Node(1), w, stm)
+
+	r := robot.NewSimpleWarehouseRobot(id, w.GetGraph().Node(1), w)
 	_, rT := r.GetStatus()
 	if rT != nil {
 		t.Error("Shouldn't have any task on newly instantiated item")

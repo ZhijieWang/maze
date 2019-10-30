@@ -20,36 +20,13 @@ import (
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
 	"maze/common"
+	"maze/common/task"
 )
 
 type WarehouseWorld struct {
 	graph  *simple.UndirectedGraph
 	robots map[common.RobotID]common.Robot
-}
-
-func (w *WarehouseWorld) GetGraph() graph.Graph {
-	return w.graph
-
-}
-
-func (w *WarehouseWorld) GetRobots() []common.Robot {
-	var values []common.Robot
-	for _, value := range w.robots {
-		values = append(values, value)
-	}
-
-	return values
-}
-func (w *WarehouseWorld) GetTasks() []common.Task {
-	panic("not implemented")
-}
-
-func (w *WarehouseWorld) SetTasks(tasks []common.Task) bool {
-	panic("not implemented")
-}
-
-func (w *WarehouseWorld) ClaimTask(tid common.TaskID, rid common.RobotID) {
-	panic("not implemented")
+	tm     common.TaskManager
 }
 
 //	1	- 	5	-	9
@@ -64,7 +41,9 @@ func CreateWarehouseWorld() *WarehouseWorld {
 	w := &WarehouseWorld{
 		simple.NewUndirectedGraph(),
 		make(map[common.RobotID]common.Robot),
+		task.CreateSimulatedTaskManager(),
 	}
+
 	for i := 1; i < 13; i++ {
 		w.graph.AddNode(simple.Node(i))
 	}
@@ -85,6 +64,94 @@ func CreateWarehouseWorld() *WarehouseWorld {
 	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(11), w.graph.Node(12)))
 	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(12), w.graph.Node(8)))
 	return w
+}
+
+func CreateWarehouseWorldWithTaskManager(stm common.TaskManager) *WarehouseWorld {
+
+	w := &WarehouseWorld{
+		simple.NewUndirectedGraph(),
+		make(map[common.RobotID]common.Robot),
+		stm,
+	}
+
+	for i := 1; i < 13; i++ {
+		w.graph.AddNode(simple.Node(i))
+	}
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(1), w.graph.Node(2)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(1), w.graph.Node(5)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(1), w.graph.Node(6)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(2), w.graph.Node(5)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(2), w.graph.Node(3)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(2), w.graph.Node(6)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(3), w.graph.Node(4)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(4), w.graph.Node(8)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(8), w.graph.Node(7)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(7), w.graph.Node(6)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(6), w.graph.Node(5)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(5), w.graph.Node(9)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(9), w.graph.Node(10)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(10), w.graph.Node(11)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(11), w.graph.Node(12)))
+	w.graph.SetEdge(w.graph.NewEdge(w.graph.Node(12), w.graph.Node(8)))
+	return w
+}
+func (w *WarehouseWorld) GetBroadcastInfo() interface{} {
+	return struct{}{}
+}
+
+func (w *WarehouseWorld) GetAllTasks() []common.Task {
+	return w.tm.GetAllTasks()
+}
+
+func (w *WarehouseWorld) GetNextTask() common.Task {
+	return w.tm.GetNextTask()
+}
+
+func (w *WarehouseWorld) GetTasks(n int) []common.Task {
+	return w.tm.GetTasks(n)
+}
+
+func (w *WarehouseWorld) TaskUpdate(taskID common.TaskID, status common.TaskStatus) error {
+	return w.tm.TaskUpdate(taskID, status)
+}
+
+func (w *WarehouseWorld) AddTask(t common.Task) bool {
+	return w.tm.AddTask(t)
+}
+
+func (w *WarehouseWorld) AddTasks(tList []common.Task) bool {
+	return w.tm.AddTasks(tList)
+}
+
+func (w *WarehouseWorld) HasTasks() bool {
+	return w.tm.HasTasks()
+}
+
+func (w *WarehouseWorld) ClaimTask(tid common.TaskID, rid common.RobotID) (success bool, err error) {
+	err = w.tm.TaskUpdate(tid, common.Assigned)
+	if err != nil {
+		return false, err
+	} else {
+		return true, err
+	}
+}
+
+func (w *WarehouseWorld) GetGraph() graph.Graph {
+	return w.graph
+
+}
+
+func (w *WarehouseWorld) GetRobots() []common.Robot {
+	var values []common.Robot
+	for _, value := range w.robots {
+		values = append(values, value)
+	}
+
+	return values
+}
+
+func (w *WarehouseWorld) SetTasks(tasks []common.Task) bool {
+	panic("not implemented")
 }
 
 func (w *WarehouseWorld) AddRobot(r common.Robot) bool {

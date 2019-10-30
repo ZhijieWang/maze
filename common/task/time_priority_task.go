@@ -50,7 +50,7 @@ func (tpt TimePriorityTask) Priority() int64 {
 	return tpt.OriginationTime.Unix()
 }
 
-// GetTaskID function of TimePriorityTask implements interface function for Task inteface
+// GetTaskID function of TimePriorityTask implements interface function for Task interface
 func (tpt TimePriorityTask) GetTaskID() common.TaskID {
 	return tpt.ID
 }

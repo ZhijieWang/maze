@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package simulation_test
+package test_test
 
 import (
 	"log"
@@ -36,9 +36,9 @@ func CreateCentralizedSimulation() common.Simulation {
 
 	var c = centralizedSimulation{}
 	c.tm = task.NewBasicTaskManager()
-	c.world = world.CreateWorld(1, task.NewBasicTaskManager())
+	c.world = world.CreateWorld(c.tm)
 	// c.world = common.CreateBlankWorld()
-	var numRobots int = 5
+	var numRobots = 5
 	for i := 0; i < numRobots; i++ {
 		rID, err := uuid.NewUUID()
 		if err != nil {

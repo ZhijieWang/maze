@@ -18,13 +18,12 @@ package main
 
 import (
 	"fmt"
-	"maze/common/simulation"
 )
 
 func main() {
 
-	s := simulation.System{}
-	s.Init()
+	//s := simulation.System{}
+	//s.Init()
 	//s.Start()
 	//s.RunTillStop()
 	fmt.Println("hello")

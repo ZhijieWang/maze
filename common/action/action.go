@@ -156,7 +156,7 @@ func (n NullAction) SetChild(a common.Action) {
 func Null() NullAction {
 	return NullAction{}
 }
-func (a NullAction) Equal(other common.Action) bool {
-	return a.GetType() == a.GetType()
+func (n NullAction) Equal(other common.Action) bool {
+	return n.GetType() == n.GetType()
 
 }

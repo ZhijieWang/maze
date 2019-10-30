@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package task_test
+package test_test
 
 import (
 	"maze/common"

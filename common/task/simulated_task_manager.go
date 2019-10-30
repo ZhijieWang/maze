@@ -36,18 +36,18 @@ func CreateSimulatedTaskManager() *SimulatedTaskManager {
 	}
 }
 func (stm *SimulatedTaskManager) GetBroadcastInfo() interface{} {
-	panic("not implemented")
+	return struct{}{}
 }
 
 func (stm *SimulatedTaskManager) GetAllTasks() []common.Task {
-	values := []common.Task{}
+	var values []common.Task
 	for _, t := range stm.tasks {
 		values = append(values, t)
 	}
 	return values
 }
 
-func (stm *SimulatedTaskManager) GetNext() common.Task {
+func (stm *SimulatedTaskManager) GetNextTask() common.Task {
 	if len(stm.tasks) == 0 {
 		return nil
 	}
@@ -140,7 +140,7 @@ type SimulatedTaskManagerSync struct {
 }
 
 func (stm *SimulatedTaskManagerSync) GetBroadcastInfo() interface{} {
-	panic("not implemented")
+	return struct{}{}
 }
 
 func (stm *SimulatedTaskManagerSync) GetAllTasks() []common.Task {
@@ -154,7 +154,7 @@ func (stm *SimulatedTaskManagerSync) GetAllTasks() []common.Task {
 	return values
 }
 
-func (stm *SimulatedTaskManagerSync) GetNext() common.Task {
+func (stm *SimulatedTaskManagerSync) GetNextTask() common.Task {
 
 	tasks := stm.GetAllTasks()
 	if len(tasks) == 0 {

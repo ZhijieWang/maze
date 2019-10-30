@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package world_test
+package test_test
 
 import (
 	"maze/common"
@@ -30,7 +30,7 @@ func TestCanMakeWorld(t *testing.T) {
 	if len(g.GetRobots()) != 0 {
 		t.Errorf("Expected Empty Start, there should be no robots")
 	}
-	if len(g.GetTasks()) != 0 {
+	if len(g.GetAllTasks()) != 0 {
 		t.Errorf("Expected Empty Start, there should be no tasks")
 	}
 
@@ -50,13 +50,13 @@ func TestCanAssignRobot(t *testing.T) {
 
 func TestCanModifyTasks(t *testing.T) {
 	g := world.CreateWorld(task.NewBasicTaskManager())
-	tasks := make([]common.Task, 0)
+	var tasks []common.Task
 	tasks = append(tasks, task.TimePriorityTask{})
-	g.SetTasks(tasks)
-	if len(g.GetTasks()) == 0 {
+	g.AddTasks(tasks)
+	if len(g.GetAllTasks()) == 0 {
 		t.Errorf("Expect the task list to be mutable\n")
 	}
-	if g.GetTasks()[0] != tasks[0] {
+	if g.GetNextTask() != tasks[0] {
 		t.Errorf("Expect the Task setter method to work, but failed")
 	}
 }

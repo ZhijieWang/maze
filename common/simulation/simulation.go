@@ -83,7 +83,6 @@ func (actor *ActorRef) Run() {
 				break
 			}
 		}
-		return
 	}()
 }
 func (actor *ActorRef) Init() {
@@ -101,7 +100,7 @@ type System struct {
 }
 
 func (s *System) Init() {
-	s.w = world.CreateWarehouseWorld()
+	s.w = world.CreateWarehouseWorldWithTaskManager(s.stm)
 	s.stm = task.CreateSimulatedTaskManagerSync()
 	t := task.NewTimePriorityTask()
 	t.Origin = s.w.GetGraph().Node(2)
@@ -112,7 +111,7 @@ func (s *System) Init() {
 }
 func (s *System) Start(observer common.Observer) {
 
-	s.refs = append(s.refs, &ActorRef{make(chan interface{}), robot.NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w, s.stm)})
+	s.refs = append(s.refs, &ActorRef{make(chan interface{}), robot.NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w)})
 	for _, i := range s.refs {
 		i.Init()
 	}

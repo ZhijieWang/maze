@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package world_test
+package test_test
 
 import (
 	"maze/common/world"

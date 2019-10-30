@@ -52,7 +52,7 @@ type DurationAction interface {
 	SetStatus(ActionStatus)
 }
 
-// RobotID is an alias to UUID for disambiguition purpose
+// RobotID is an alias to UUID for disambiguation purpose
 type RobotID = uuid.UUID
 type Robot interface {
 	ID() RobotID
@@ -77,14 +77,14 @@ type TaskStatus int
 
 // Unassigned defines task which are not assigned to any worker
 // Assigned defines task that has been assigned to a worker, either in progress or not
-// Completed referrs to task that are complemented and should no longer be available in task queue, but tracakle (TTL implementation subject to detail)
+// Completed refers to task that are complemented and should no longer be available in task queue, but traceable (TTL implementation subject to detail)
 const (
 	Unassigned = iota
 	Assigned
 	Completed
 )
 
-//TaskID is the alias name for a UUID, for disambiguition purpose
+//TaskID is the alias name for a UUID, for disambiguation purpose
 type TaskID = uuid.UUID
 
 // PriorityTask interface defines what basic interface methods for tasks to be used in TaskQueue. The Priority accessor can be used as a comparator.
@@ -106,7 +106,7 @@ type Task interface {
 type TaskManager interface {
 	GetBroadcastInfo() interface{}
 	GetAllTasks() []Task
-	GetNext() Task
+	GetNextTask() Task
 	GetTasks(n int) []Task
 	TaskUpdate(taskID TaskID, status TaskStatus) error
 	AddTask(t Task) bool
@@ -123,13 +123,12 @@ type Location graph.Node
 
 // World interface defines the behavior of World simulation
 type World interface {
+	TaskManager
 	GetGraph() graph.Graph
 	GetRobots() []Robot
 	UpdateRobot(Robot) bool
-	GetTasks() []Task
 	AddRobot(r Robot) bool
-	SetTasks(tasks []Task) bool
-	ClaimTask(tid TaskID, rid RobotID)
+	ClaimTask(tid TaskID, rid RobotID) (success bool, err error)
 }
 type Observer interface {
 	OnNotify(data interface{})

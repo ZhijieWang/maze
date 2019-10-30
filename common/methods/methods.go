@@ -47,7 +47,7 @@ func TaskGenerator(maxTasks int, w common.World) []common.Task {
 	return tList
 }
 
-func NoMove(w common.World, r common.Robot, t int) common.Trace {
+func NoMove(r common.Robot, t int) common.Trace {
 	return common.Trace{
 		RobotID:   r.ID(),
 		Source:    r.Location(),
@@ -64,7 +64,7 @@ func NoMove(w common.World, r common.Robot, t int) common.Trace {
 // }
 
 // RandMove is a basic function, robot takes a random move that it can move to.
-// if there is onlyone path, robot will move
+// if there is only one path, robot will move
 // this is stateless, regardless of previous move taken
 func RandMove(w common.World, r common.Robot, t int) common.Trace {
 	locs := w.GetGraph().From(r.Location().ID())
@@ -124,7 +124,6 @@ func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) c
 // SelectTaskByDistance returns a task from queue, and returns that task. If there is an error, return err
 func SelectTaskByDistance(tm common.PassiveTaskManager, robot common.Robot, world common.World) (common.PriorityTask, []graph.Node, error) {
 	tq := tm.GetAllTasks()
-	log.Printf("There are %v tasks currently in Queue\n", len(tq))
 	if len(tq) == 0 {
 		log.Println("No Tasks")
 		return nil, nil, nil

@@ -11,7 +11,7 @@ refactor the code base to have proper modules. Remove concurrency controls.
 
 June 11 2019 --
 
-Started implementing interfaces to abstract away all the confusing points of concurrent and distributed points. Trying to figure out a set of interfaces that work for both distributed message passing mode or contralized iterative  mode.
+Started implementing interfaces to abstract away all the confusing points of concurrent and distributed points. Trying to figure out a set of interfaces that work for both distributed message passing mode or centralized iterative  mode.
 
 
 Sept 24 - Ocr 1 2019
@@ -26,7 +26,7 @@ Oct 14 2019
 After first set of tests pass, reviewed the code. The intermingled pieces are due to trying to design interface and implementing basic objects fulfilling the interface -- making tests difficult. To ensure the interface is correct, test implementations should be implemented in test packages. This allows functions in test packages to introspect object states (Simulate), and some Basic Implementations could stay with the Interface package, like World, to avoid repetitive code (technically, for more robust testing, each test case should implement its own depended sub objects/interface) .
 
 Oct 17 2019
-Some basic simulation was run. Realized some limitation in existing Application stack interface. Start implement usecase further to identify limitation of the interface.
+Some basic simulation was run. Realized some limitation in existing Application stack interface. Start implement use case further to identify limitation of the interface.
 
 
 Oct 24 2019 

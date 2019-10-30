@@ -44,12 +44,15 @@ func (r *simpleRobot) ID() common.RobotID {
 // Run is a function that can be run in a concurrent way
 func (r *simpleRobot) Run() common.Trace {
 
-	var tick int = 1
+	var tick = 1
 	if r.task == nil {
 		if r.TaskManager.HasTasks() {
 			r.task = r.TaskManager.GetTasks(1)[0]
 
-			r.World.ClaimTask(r.task.GetTaskID(), r.ID())
+			success, err := r.World.ClaimTask(r.task.GetTaskID(), r.ID())
+			if !success {
+				panic(err)
+			}
 			return common.Trace{
 				RobotID:   r.ID(),
 				Source:    r.location,
