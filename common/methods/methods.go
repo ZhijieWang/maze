@@ -16,9 +16,12 @@
 package methods
 
 import (
+	"errors"
+	"gonum.org/v1/gonum/graph/simple"
 	"log"
 	"math/rand"
 	"maze/common"
+	"maze/common/action"
 	"maze/common/task"
 
 	"github.com/google/uuid"
@@ -77,6 +80,45 @@ func RandMove(w common.World, r common.Robot, t int) common.Trace {
 	// r.Location() = trace.Target
 	return trace
 
+}
+func NextMove(graph simple.DirectedGraph, start graph.Node) graph.Node {
+	// path, ok =
+	return graph.From(start.ID()).Node()
+}
+func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
+
+	pt, ok := path.BellmanFordFrom(start, g)
+	if ok {
+		p, _ := pt.To(end.ID())
+		if len(p) == 0 {
+			panic("No Path")
+		}
+		return p[1:], nil
+	} else {
+		return nil, errors.New("no positive cycle")
+	}
+}
+func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) common.Action {
+	var start common.Action
+	var current common.Action
+	if location == task.GetOrigination() {
+		start = action.CreateBeginTaskAction(location)
+		current = start
+	} else {
+		start = action.CreateMoveAction(location, task.GetOrigination())
+		start.(*action.MoveAction).Path, _ = GetPath(location, task.GetOrigination(), g)
+		start.SetChild(action.CreateBeginTaskAction(location))
+		current = start.GetChild()
+	}
+	//if task.GetDestination()== task.GetOrigination() {
+	//	panic("Start and End overlaps")
+	//}
+	p, _ := GetPath(task.GetOrigination(), task.GetDestination(), g)
+	current.SetChild(action.CreateMoveActionWithPath(task.GetOrigination(), task.GetDestination(), p))
+	current.GetChild().SetChild(action.CreateEndTaskAction(task.GetDestination()))
+	current.GetChild().GetChild().SetChild(action.Null())
+
+	return start
 }
 
 // SelectTaskByDistance returns a task from queue, and returns that task. If there is an error, return err
