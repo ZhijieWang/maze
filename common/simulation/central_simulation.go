@@ -27,19 +27,19 @@ import (
 )
 
 type CentralizedSimulation struct {
-	World common.World
-	TM   common.TaskManager
+	World      common.World
+	TM         common.TaskManager
 	Iterations int
-	inited bool
+	inited     bool
 }
 
 func CreateCentralizedSimulation() *CentralizedSimulation {
-	return &CentralizedSimulation{Iterations:10 }
+	return &CentralizedSimulation{Iterations: 10}
 }
 
 func (sim *CentralizedSimulation) Init() {
 
-	sim.TM = task.NewBasicTaskManager()
+	sim.TM = task.CreateSimulatedTaskManager()
 	sim.World = world.CreateWorld(sim.TM)
 	l := sim.World.GetGraph().Nodes().Len()
 	var numRobots = 5
@@ -54,24 +54,26 @@ func (sim *CentralizedSimulation) Init() {
 	for i := 0; i < 20; i++ {
 
 		t := task.NewTimePriorityTask()
-		t.Origin = sim.World.GetGraph().Node(int64(rand.Intn(l)))
-		t.Destination = sim.World.GetGraph().Node(int64(rand.Intn(l)))
+		t.Origin = sim.World.GetGraph().Node(int64(rand.Intn(l) + 1))
+		t.Destination = sim.World.GetGraph().Node(int64(rand.Intn(l) + 1))
+		if t.Origin == nil || t.Destination == nil {
+			panic("Failed Initialization")
+		}
 		sim.World.AddTask(t)
 	}
 	sim.inited = true
 }
 func (sim *CentralizedSimulation) Run(obs common.Observer) error {
-	if !sim.inited{
+	if !sim.inited {
 		panic("System enter the run mode before proper initialization")
 	}
-	for i :=0; i< sim.Iterations; i++ {
+	for i := 0; i < sim.Iterations; i++ {
 		for _, i := range sim.World.GetRobots() {
 			trace := i.Run()
 			sim.World.UpdateRobot(i)
-			obs.OnNotify(trace)
+			obs.Notify(trace)
 		}
-		obs.OnNotify(struct {
-
+		obs.Notify(struct {
 		}{})
 	}
 	return nil

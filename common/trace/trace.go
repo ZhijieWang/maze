@@ -37,6 +37,21 @@ func (m *MoveTrace) GetContent() interface{} {
 }
 
 type TaskExecutionTrace struct {
+	Status  int
+	TaskID  common.TaskID
+	RobotID common.RobotID
+}
+
+type TaskNullActionTrace struct {
+}
+
+var TaskNullActionTraceType common.TraceType = 2
+
+func (m TaskNullActionTrace) GetType() common.TraceType {
+	return TaskNullActionTraceType
+}
+func (m TaskNullActionTrace) GetContent() interface{} {
+	return m
 }
 
 var TaskExecutionTraceType common.TraceType = 1

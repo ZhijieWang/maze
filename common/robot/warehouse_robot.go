@@ -16,8 +16,8 @@
 package robot
 
 import (
-	"fmt"
 	"gonum.org/v1/gonum/graph"
+	"log"
 	"maze/common/methods"
 	"maze/common/trace"
 
@@ -57,12 +57,17 @@ func (r *simpleWarehouseRobot) Plan() {
 		if r.task == nil {
 			if r.World.HasTasks() {
 				t := r.World.GetNextTask()
+				if t == nil {
+					//return
+					// in concurrent mode, there may be tasks, but during task claim, the task may not longer be available
+					panic("Nil task")
+				}
 				success, err := r.World.ClaimTask(t.GetTaskID(), r.id)
 
 				if !success {
-					panic(fmt.Sprintf("Failed to update task, %+v", err))
+					log.Printf("Err %+v, move on", err)
 				} else {
-
+					log.Printf("Robot %s has claimed task %s", r.id.String()[4:8], t.GetTaskID().String()[4:8])
 				}
 				r.act = methods.PlanTaskAction(r.World.GetGraph(), r.location, t)
 				r.task = t
@@ -79,7 +84,6 @@ func (r *simpleWarehouseRobot) Execute() common.Trace {
 		move.SetStatus(common.ActiveStatus)
 		if len(move.Path) > 0 {
 			n := move.Path[0]
-
 			move.Path = move.Path[1:]
 			if len(move.Path) == 0 {
 				move.SetStatus(common.EndStatus)
@@ -115,19 +119,22 @@ func (r *simpleWarehouseRobot) Execute() common.Trace {
 
 	case common.ActionTypeStartTask:
 		r.act = r.act.GetChild()
-		rTrace = trace.TaskExecutionTrace{}
+		rTrace = trace.TaskExecutionTrace{1, r.task.GetTaskID(), r.id}
 	case common.ActionTypeEndTask:
-		// mark task complete and remove self task\
+		// mark task complete and remove self task
+		log.Printf("Robot %s Marking %s as complete", r.id.String()[4:8], r.task.GetTaskID().String()[4:8])
 		err := r.World.TaskUpdate(r.task.GetTaskID(), common.Completed)
 		if err != nil {
 			panic(err)
 		}
-		r.task = nil
+
 		r.act = r.act.GetChild()
-		rTrace = trace.TaskExecutionTrace{}
+
+		rTrace = trace.TaskExecutionTrace{2, r.task.GetTaskID(), r.id}
+		r.task = nil
 	case common.ActionTypeNull:
 		// choose to remain on the same location, no move.
-		rTrace = trace.TaskExecutionTrace{}
+		rTrace = trace.TaskNullActionTrace{}
 	default:
 		// do nothing
 
@@ -137,6 +144,7 @@ func (r *simpleWarehouseRobot) Execute() common.Trace {
 
 // Run is a function that can be run in a concurrent way
 func (r *simpleWarehouseRobot) Run() common.Trace {
+	log.Printf("Robot %s Run", r.id)
 	r.tick += 1
 	r.Plan()
 	return r.Execute()

@@ -105,7 +105,6 @@ func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) c
 		current = start
 	} else {
 		start = action.CreateMoveAction(location, task.GetOrigination())
-
 		pat, err := GetPath(location, task.GetOrigination(), g)
 		if err != nil {
 			panic(err)

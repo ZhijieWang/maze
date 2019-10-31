@@ -136,8 +136,10 @@ type World interface {
 	ClaimTask(tid TaskID, rid RobotID) (success bool, err error)
 }
 type Observer interface {
-	OnNotify(data interface{})
+	Notify(data interface{})
+	GetChannel() chan interface{}
 }
+
 type Event interface {
 }
 type Notifier interface {
@@ -152,6 +154,6 @@ type Simulation interface {
 }
 type Actor interface {
 	Init()
-	Run()
+	Run(observer Observer)
 	Stop()
 }

@@ -17,6 +17,7 @@
 package simulation
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"log"
 	"math/rand"
@@ -30,31 +31,35 @@ import (
 type TaskFeederActor struct {
 	probability int
 	frequency   int
-	w           common.World
+	W           common.World
 	comm        chan interface{}
 	cap         int
 }
 
-func (actor *TaskFeederActor) Run() {
+func (actor *TaskFeederActor) Run(observer common.Observer) {
 	go func() {
 		for {
 			select {
 			default:
-				time.After(5)
-				if actor.probability > rand.Intn(100) {
-					m := actor.w.GetGraph().Nodes().Len()
-					t := task.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)), actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)))
-					actor.w.AddTask(t)
-					actor.cap--
-				}
 				if actor.cap == 0 {
 					break
+				}
+				time.After(5)
+				if actor.probability > rand.Intn(100) {
+					m := actor.W.GetGraph().Nodes().Len()
+					t := task.NewTimePriorityTaskWithParameter(actor.W.GetGraph().Node(int64(rand.Intn(m-1)+1)), actor.W.GetGraph().Node(int64(rand.Intn(m-1)+1)))
+					observer.GetChannel() <- fmt.Sprintf("Adding Task %+v", t)
+
+					actor.W.AddTask(t)
+					actor.cap--
+					log.Printf("Actor Cap is %d", actor.cap)
 				}
 			case <-actor.comm:
 				break
 			}
 
 		}
+		log.Printf("Break from loop")
 	}()
 }
 func (actor *TaskFeederActor) Init() {
@@ -69,13 +74,13 @@ type ActorRef struct {
 	robot common.Robot
 }
 
-func (actor *ActorRef) Run() {
+func (actor *ActorRef) Run(observer common.Observer) {
 
 	go func() {
 		for {
 			select {
 			default:
-				actor.robot.Run()
+				observer.GetChannel() <- actor.robot.Run()
 			case <-actor.comm:
 				break
 			}
@@ -91,33 +96,32 @@ func (actor *ActorRef) Stop() {
 }
 
 type System struct {
-	w      *world.WarehouseWorld
+	W      *world.WarehouseWorld
 	stm    *task.SimulatedTaskManagerSync
 	refs   []common.Actor
 	NumBot int
 }
 
 func (s *System) Init() {
-	s.w = world.CreateWarehouseWorldWithTaskManager(s.stm)
 	s.stm = task.CreateSimulatedTaskManagerSync()
+	s.W = world.CreateWarehouseWorldWithTaskManager(s.stm)
+
 	t := task.NewTimePriorityTask()
-	t.Origin = s.w.GetGraph().Node(2)
-	t.Destination = s.w.GetGraph().Node(6)
+	t.Origin = s.W.GetGraph().Node(2)
+	t.Destination = s.W.GetGraph().Node(6)
 
 	s.stm.AddTask(t)
 	for i := 0; i < s.NumBot; i++ {
-		s.refs = append(s.refs, &ActorRef{make(chan interface{}), robot.NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w)})
+		s.refs = append(s.refs, &ActorRef{make(chan interface{}), robot.NewSimpleWarehouseRobot(uuid.New(), s.W.GetGraph().Node(1), s.W)})
 	}
-
+	s.refs = append(s.refs, &TaskFeederActor{30, 5, s.W, make(chan interface{}), 5})
 	for _, i := range s.refs {
 		i.Init()
 	}
 }
 func (s *System) Start(observer common.Observer) {
-
-	s.refs = append(s.refs, &TaskFeederActor{30, 5, s.w, make(chan interface{}), 5})
 	for _, i := range s.refs {
-		go i.Run()
+		i.Run(observer)
 	}
 }
 func (s System) Stop() bool {
