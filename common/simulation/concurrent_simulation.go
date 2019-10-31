@@ -52,14 +52,13 @@ func (actor *TaskFeederActor) Run(observer common.Observer) {
 
 					actor.W.AddTask(t)
 					actor.cap--
-					log.Printf("Actor Cap is %d", actor.cap)
+
 				}
 			case <-actor.comm:
 				break
 			}
 
 		}
-		log.Printf("Break from loop")
 	}()
 }
 func (actor *TaskFeederActor) Init() {

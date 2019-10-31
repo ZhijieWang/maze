@@ -58,9 +58,9 @@ func (r *simpleWarehouseRobot) Plan() {
 			if r.World.HasTasks() {
 				t := r.World.GetNextTask()
 				if t == nil {
-					//return
+					return
 					// in concurrent mode, there may be tasks, but during task claim, the task may not longer be available
-					panic("Nil task")
+					//panic("Nil task")
 				}
 				success, err := r.World.ClaimTask(t.GetTaskID(), r.id)
 
@@ -144,7 +144,6 @@ func (r *simpleWarehouseRobot) Execute() common.Trace {
 
 // Run is a function that can be run in a concurrent way
 func (r *simpleWarehouseRobot) Run() common.Trace {
-	log.Printf("Robot %s Run", r.id)
 	r.tick += 1
 	r.Plan()
 	return r.Execute()

@@ -134,120 +134,67 @@ func (stm *SimulatedTaskManager) ActiveCount() int {
 }
 
 type SimulatedTaskManagerSync struct {
-	tasks   sync.Map
-	active  sync.Map
-	archive sync.Map
+	s *SimulatedTaskManager
+	m *sync.Mutex
 }
 
+func CreateSimulatedTaskManagerSync() *SimulatedTaskManagerSync {
+	return &SimulatedTaskManagerSync{
+		CreateSimulatedTaskManager(),
+		&sync.Mutex{},
+	}
+}
+func (stm *SimulatedTaskManagerSync) GetNextTask() common.Task {
+	stm.m.Lock()
+	defer stm.m.Unlock()
+	return stm.s.GetNextTask()
+
+}
 func (stm *SimulatedTaskManagerSync) GetBroadcastInfo() interface{} {
 	return struct{}{}
 }
 
 func (stm *SimulatedTaskManagerSync) GetAllTasks() []common.Task {
-	var values []common.Task
+	return stm.s.GetAllTasks()
 
-	stm.tasks.Range(func(key interface{}, value interface{}) bool {
-		values = append(values, value.(common.Task))
-		return true
-	})
-
-	return values
-}
-
-func (stm *SimulatedTaskManagerSync) GetNextTask() common.Task {
-
-	tasks := stm.GetAllTasks()
-	if len(tasks) == 0 {
-		return nil
-	} else {
-		return tasks[0]
-	}
 }
 
 func (stm *SimulatedTaskManagerSync) GetTasks(n int) []common.Task {
-	return stm.GetAllTasks()[:n]
+	return stm.s.GetTasks(n)
 }
 
 func (stm *SimulatedTaskManagerSync) TaskUpdate(taskID common.TaskID, status common.TaskStatus) error {
-
-	switch status {
-
-	case common.Completed:
-		if t, ok := stm.active.Load(taskID); ok {
-			stm.archive.Store(taskID, t)
-			stm.active.Delete(taskID)
-			return nil
-		} else {
-			return errors.New("status can't jump from UnAssigned to Completed")
-		}
-
-	case common.Assigned:
-		if t, ok := stm.tasks.Load(taskID); ok {
-			stm.active.Store(taskID, t)
-			stm.tasks.Delete(taskID)
-			return nil
-		} else {
-			return errors.New("task not found")
-		}
-
-	default:
-		return nil
-	}
+	stm.m.Lock()
+	defer stm.m.Unlock()
+	return stm.s.TaskUpdate(taskID, status)
 }
 
 func (stm *SimulatedTaskManagerSync) AddTask(t common.Task) bool {
-	if t.GetStatus() == common.Completed {
-		return false
-	} else {
-		_, ok := stm.tasks.LoadOrStore(t.GetTaskID(), t)
-		if ok {
-			//loaded
-			return false
-		} else {
-			// stored
-			return true
-		}
+	stm.m.Lock()
+	defer stm.m.Unlock()
+	return stm.s.AddTask(t)
 
-	}
 }
 
 func (stm *SimulatedTaskManagerSync) AddTasks(tList []common.Task) bool {
-	result := true
-	for _, t := range tList {
-		result = result && stm.AddTask(t)
-	}
-	return result
+	stm.m.Lock()
+	defer stm.m.Unlock()
+	return stm.s.AddTasks(tList)
 }
 
 func (stm *SimulatedTaskManagerSync) HasTasks() bool {
-	return len(stm.GetAllTasks()) != 0
+	stm.m.Lock()
+	defer stm.m.Unlock()
+	return stm.s.HasTasks()
 }
 func (stm *SimulatedTaskManagerSync) FinishedCount() int {
-	var values []common.Task
-
-	stm.archive.Range(func(key interface{}, value interface{}) bool {
-		values = append(values, value.(common.Task))
-		return true
-	})
-
-	return len(values)
+	stm.m.Lock()
+	defer stm.m.Unlock()
+	return stm.s.FinishedCount()
 }
 
 func (stm *SimulatedTaskManagerSync) ActiveCount() int {
-	var values []common.Task
-
-	stm.active.Range(func(key interface{}, value interface{}) bool {
-		values = append(values, value.(common.Task))
-		return true
-	})
-
-	return len(values)
-}
-
-func CreateSimulatedTaskManagerSync() *SimulatedTaskManagerSync {
-	return &SimulatedTaskManagerSync{
-		sync.Map{},
-		sync.Map{},
-		sync.Map{},
-	}
+	stm.m.Lock()
+	defer stm.m.Unlock()
+	return stm.s.ActiveCount()
 }
