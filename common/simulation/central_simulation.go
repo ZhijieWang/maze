@@ -26,51 +26,57 @@ import (
 	"maze/common/world"
 )
 
-type centralizedSimulation struct {
-	world common.World
-	tm    common.TaskManager
+type CentralizedSimulation struct {
+	World common.World
+	TM   common.TaskManager
+	Iterations int
+	inited bool
 }
 
-func CreateCentralizedSimulation() common.Simulation {
+func CreateCentralizedSimulation() *CentralizedSimulation {
+	return &CentralizedSimulation{Iterations:10 }
+}
 
-	var c = centralizedSimulation{}
-	c.tm = task.NewBasicTaskManager()
-	c.world = world.CreateWorld(c.tm)
-	l := c.world.GetGraph().Nodes().Len()
+func (sim *CentralizedSimulation) Init() {
+
+	sim.TM = task.NewBasicTaskManager()
+	sim.World = world.CreateWorld(sim.TM)
+	l := sim.World.GetGraph().Nodes().Len()
 	var numRobots = 5
 	for i := 0; i < numRobots; i++ {
 		rID, err := uuid.NewUUID()
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.world.AddRobot(robot.NewSimpleWarehouseRobot(rID, c.world.GetGraph().Node(int64(rand.Intn(l))), c.world))
+		sim.World.AddRobot(robot.NewSimpleWarehouseRobot(rID, sim.World.GetGraph().Node(int64(rand.Intn(l))), sim.World))
 	}
 
 	for i := 0; i < 20; i++ {
 
 		t := task.NewTimePriorityTask()
-		t.Origin = c.world.GetGraph().Node(int64(rand.Intn(l)))
-		t.Destination = c.world.GetGraph().Node(int64(rand.Intn(l)))
-		c.world.AddTask(t)
+		t.Origin = sim.World.GetGraph().Node(int64(rand.Intn(l)))
+		t.Destination = sim.World.GetGraph().Node(int64(rand.Intn(l)))
+		sim.World.AddTask(t)
 	}
-
-	return c
+	sim.inited = true
 }
-
-func (sim centralizedSimulation) Init() {
-
-}
-func (sim centralizedSimulation) Run(obs common.Observer) error {
-	for _, i := range sim.world.GetRobots() {
-		trace := i.Run()
-		sim.world.UpdateRobot(i)
-		obs.OnNotify(trace)
+func (sim *CentralizedSimulation) Run(obs common.Observer) error {
+	if !sim.inited{
+		panic("System enter the run mode before proper initialization")
 	}
-	obs.OnNotify(nil)
+	for i :=0; i< sim.Iterations; i++ {
+		for _, i := range sim.World.GetRobots() {
+			trace := i.Run()
+			sim.World.UpdateRobot(i)
+			obs.OnNotify(trace)
+		}
+		obs.OnNotify(struct {
 
+		}{})
+	}
 	return nil
 }
 
-func (sim centralizedSimulation) Stop() bool {
+func (sim *CentralizedSimulation) Stop() bool {
 	return true
 }

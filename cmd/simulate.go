@@ -16,6 +16,8 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"maze/common/simulation"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -34,12 +36,22 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("simulate called")
 		start := time.Now()
-		// s := simulation.CreateCentralizedSimulation()
-
-		// s.Run(&basicObserver{})
+		s := simulation.CreateCentralizedSimulation()
+		s.Init()
 		elapsed := time.Since(start)
+		s.Iterations = Iterations
+
+		s.Run(&BasicObserver{})
+		//s.Stop()
+
 		fmt.Printf("Simulation took %s for %v iterations \n", elapsed, Iterations)
 	},
+}
+type BasicObserver struct {
+
+}
+func (b *BasicObserver) OnNotify(data interface{}){
+	log.Printf("%+v",data )
 }
 
 // Iterations is the flag for how many iterations to run

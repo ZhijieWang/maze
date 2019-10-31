@@ -34,6 +34,8 @@ func (b *BasicObserver) OnNotify(data interface{}) {
 func TestSimulationRunResult(t *testing.T) {
 	s := simulation.CreateCentralizedSimulation()
 	obs := BasicObserver{}
+	s.Init()
+
 	err := s.Run(&obs)
 	if err != nil {
 		t.Errorf("Execution failed")

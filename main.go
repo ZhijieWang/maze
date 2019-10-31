@@ -18,14 +18,11 @@ package main
 
 import (
 	"fmt"
+	"maze/cmd"
 )
 
 func main() {
-
-	//s := simulation.System{}
-	//s.Init()
-	//s.Start()
-	//s.RunTillStop()
+	cmd.Execute()
 	fmt.Println("hello")
 
 }
