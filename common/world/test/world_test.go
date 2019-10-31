@@ -40,7 +40,7 @@ func TestCanAssignRobot(t *testing.T) {
 	g := world.CreateWorld(task.NewBasicTaskManager())
 	numBots := len(g.GetRobots())
 	id, _ := uuid.NewUUID()
-	r := robot.NewSimpleRobot(id, g.GetGraph().Node(0), g, task.NewBasicTaskManager())
+	r := robot.NewSimpleWarehouseRobot(id, g.GetGraph().Node(0), g)
 	g.AddRobot(r)
 	rs := g.GetRobots()
 	if len(rs) != (numBots + 1) {

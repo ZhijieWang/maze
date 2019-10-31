@@ -60,16 +60,21 @@ type Robot interface {
 	Run() Trace
 	Location() graph.Node
 	Plan()
-	Execute() (graph.Node, Action)
+	Execute() Trace
 	GetStatus() (Action, Task)
 }
 
-// Trace is data structure to hold data that can be used for path planning
-type Trace struct {
-	RobotID   RobotID
-	Source    graph.Node
-	Target    graph.Node
-	Timestamp int
+type TraceType int
+
+const (
+	MoveTraceType TraceType = iota
+	TaskTraceType
+)
+
+// Trace is data structure to hold data of robot movement and actions, for tracking
+type Trace interface {
+	GetType() TraceType
+	GetContent() interface{}
 }
 
 // TaskStatus is the enumeration of task status
@@ -144,4 +149,9 @@ type Simulation interface {
 	Init()
 	Run(obs Observer) error
 	Stop() bool
+}
+type Actor interface {
+	Init()
+	Run()
+	Stop()
 }

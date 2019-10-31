@@ -21,6 +21,7 @@ import (
 	"maze/common/methods"
 	"maze/common/robot"
 	"maze/common/task"
+	"maze/common/trace"
 	"maze/common/world"
 
 	"testing"
@@ -145,6 +146,11 @@ func TestRobotCanExecuteTaskPlan(t *testing.T) {
 	r := robots[0]
 
 	act := methods.PlanTaskAction(w.GetGraph(), r.Location(), t3)
+	if act.GetType() == common.ActionTypeMove {
+
+	} else {
+		t.Error("The robot should move first")
+	}
 	r.Plan()
 	//r.Execute()
 	rAct, rTask := r.GetStatus()
@@ -182,12 +188,18 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 	setup()
 	addT3()
 	r := robots[0]
-	trace := r.Run()
+	rTrace := r.Run().(*trace.MoveTrace)
 	rAct, _ := r.GetStatus()
-	if trace.Source == w.GetGraph().Node(1) && trace.Target == w.GetGraph().Node(2) {
+	if rAct.GetType() == common.ActionTypeStartTask {
+
+	} else {
+		t.Fail()
+	}
+
+	if rTrace.Source == w.GetGraph().Node(1) && rTrace.Target == w.GetGraph().Node(2) {
 		// Move one step
 	} else {
-		t.Errorf("First step should be moving from 1 to 2, actual trace is %+v", trace)
+		t.Errorf("First step should be moving from 1 to 2, actual trace is %+v", rTrace)
 		t.Fail()
 	}
 
@@ -197,37 +209,37 @@ func TestRobotCanExecuteTaskPlanMultiStep(t *testing.T) {
 		t.Errorf("After 1 step move, the next pending task should be begin task, but actual is %v : %+v", rAct.GetType(), rAct)
 		t.Fail()
 	}
-	trace = r.Run()
-	rAct, _ = r.GetStatus()
-	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetOrigination() {
+	if r.Run().(trace.TaskExecutionTrace).GetType() == trace.TaskExecutionTraceType {
+
 		// execute begin task action, stay at the source node
 	} else {
 		t.Errorf("Exepct this step to perform begin task step. Which remains at the task start position")
 		t.Fail()
 	}
+	rAct, _ = r.GetStatus()
 	if rAct.GetType() == common.ActionTypeMove && rAct.(*action.MoveAction).End == t3.GetDestination() {
 	} else {
 		t.Errorf("Expect next step move to target location after execute beging action.\n What is the actual action? %+v", rAct)
 	}
-	trace = r.Run()
+	rTrace = r.Run().(*trace.MoveTrace)
 	rAct, _ = r.GetStatus()
-	if trace.Source == t3.GetOrigination() && trace.Target == t3.GetDestination() {
+	if rTrace.Source == t3.GetOrigination() && rTrace.Target == t3.GetDestination() {
 
 	} else {
-		t.Errorf("Should move to final destination with execution. What actual move was %+v", trace)
+		t.Errorf("Should move to final destination with execution. What actual move was %+v", rTrace)
 	}
 	if rAct.GetType() == common.ActionTypeEndTask {
 		// next should end execution
 	} else {
 		t.Errorf("Should plan to end the task execution")
 	}
-	trace = r.Run()
-	rAct, _ = r.GetStatus()
-	if trace.Source == t3.GetDestination() && trace.Target == t3.GetDestination() {
+
+	if r.Run().GetType() == trace.TaskExecutionTraceType {
 		// wrap up task
 	} else {
 		t.Errorf("Execte end task ")
 	}
+	rAct, _ = r.GetStatus()
 	if rAct == action.Null() {
 		// Should be nothing left
 	} else {
@@ -253,17 +265,17 @@ func TestRobotCanExecuteMoveInSimulation(t *testing.T) {
 	}
 
 	// cycle to claim tasks
-	var trace []common.Trace
+	var rTraces []common.Trace
 	for _, i := range robots {
-		trace = append(trace, i.Run())
+		rTraces = append(rTraces, i.Run())
 	}
 
 	if len(w.GetAllTasks()) > 1 {
 		t.Errorf("Robot Failed to claim tasks")
 	}
 	claimed := false
-	for _, ts := range trace {
-		if ts.Target != nil && ts.Target == t3.GetOrigination() {
+	for _, ts := range rTraces {
+		if ts.(*trace.MoveTrace).Target != nil && ts.(*trace.MoveTrace).Target == t3.GetOrigination() {
 			claimed = true
 		}
 	}
@@ -271,8 +283,8 @@ func TestRobotCanExecuteMoveInSimulation(t *testing.T) {
 		t.Error("Failed to emit trace of t1")
 	}
 	claimed = false
-	for _, ts := range trace {
-		if ts.Target != nil && ts.Target == t4.GetOrigination() {
+	for _, ts := range rTraces {
+		if ts.(*trace.MoveTrace).Target != nil && ts.(*trace.MoveTrace).Target == t4.GetOrigination() {
 			claimed = true
 		}
 	}

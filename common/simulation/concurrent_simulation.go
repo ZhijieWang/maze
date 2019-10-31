@@ -31,8 +31,8 @@ type TaskFeederActor struct {
 	probability int
 	frequency   int
 	w           common.World
-	tm          *task.SimulatedTaskManagerSync
 	comm        chan interface{}
+	cap         int
 }
 
 func (actor *TaskFeederActor) Run() {
@@ -44,9 +44,11 @@ func (actor *TaskFeederActor) Run() {
 				if actor.probability > rand.Intn(100) {
 					m := actor.w.GetGraph().Nodes().Len()
 					t := task.NewTimePriorityTaskWithParameter(actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)), actor.w.GetGraph().Node(int64(rand.Intn(m-1)+1)))
-					actor.tm.AddTask(t)
-					//log.Printf("Adding task %+v", t)
-
+					actor.w.AddTask(t)
+					actor.cap--
+				}
+				if actor.cap == 0 {
+					break
 				}
 			case <-actor.comm:
 				break
@@ -62,11 +64,6 @@ func (actor *TaskFeederActor) Stop() {
 	close(actor.comm)
 }
 
-type Actor interface {
-	Init()
-	Run()
-	Stop()
-}
 type ActorRef struct {
 	comm  chan interface{}
 	robot common.Robot
@@ -94,9 +91,10 @@ func (actor *ActorRef) Stop() {
 }
 
 type System struct {
-	w    *world.WarehouseWorld
-	stm  *task.SimulatedTaskManagerSync
-	refs []Actor
+	w      *world.WarehouseWorld
+	stm    *task.SimulatedTaskManagerSync
+	refs   []common.Actor
+	NumBot int
 }
 
 func (s *System) Init() {
@@ -107,15 +105,17 @@ func (s *System) Init() {
 	t.Destination = s.w.GetGraph().Node(6)
 
 	s.stm.AddTask(t)
+	for i := 0; i < s.NumBot; i++ {
+		s.refs = append(s.refs, &ActorRef{make(chan interface{}), robot.NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w)})
+	}
 
-}
-func (s *System) Start(observer common.Observer) {
-
-	s.refs = append(s.refs, &ActorRef{make(chan interface{}), robot.NewSimpleWarehouseRobot(uuid.New(), s.w.GetGraph().Node(1), s.w)})
 	for _, i := range s.refs {
 		i.Init()
 	}
-	s.refs = append(s.refs, &TaskFeederActor{30, 5, s.w, s.stm, make(chan interface{})})
+}
+func (s *System) Start(observer common.Observer) {
+
+	s.refs = append(s.refs, &TaskFeederActor{30, 5, s.w, make(chan interface{}), 5})
 	for _, i := range s.refs {
 		go i.Run()
 	}

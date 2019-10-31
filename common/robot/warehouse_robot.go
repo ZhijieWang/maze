@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"gonum.org/v1/gonum/graph"
 	"maze/common/methods"
+	"maze/common/trace"
 
 	"maze/common"
 	"maze/common/action"
@@ -57,8 +58,11 @@ func (r *simpleWarehouseRobot) Plan() {
 			if r.World.HasTasks() {
 				t := r.World.GetNextTask()
 				success, err := r.World.ClaimTask(t.GetTaskID(), r.id)
+
 				if !success {
 					panic(fmt.Sprintf("Failed to update task, %+v", err))
+				} else {
+
 				}
 				r.act = methods.PlanTaskAction(r.World.GetGraph(), r.location, t)
 				r.task = t
@@ -67,8 +71,8 @@ func (r *simpleWarehouseRobot) Plan() {
 	}
 }
 
-func (r *simpleWarehouseRobot) Execute() (graph.Node, common.Action) {
-
+func (r *simpleWarehouseRobot) Execute() common.Trace {
+	var rTrace common.Trace
 	switch r.act.GetType() {
 	case common.ActionTypeMove:
 		move := r.act.(*action.MoveAction)
@@ -80,18 +84,38 @@ func (r *simpleWarehouseRobot) Execute() (graph.Node, common.Action) {
 			if len(move.Path) == 0 {
 				move.SetStatus(common.EndStatus)
 				r.act = move.GetChild()
+				rTrace = &trace.MoveTrace{
+					RobotID:   r.ID(),
+					Source:    r.location,
+					Target:    n,
+					Timestamp: r.tick,
+				}
 				r.location = n
+
 			} else {
+				rTrace = &trace.MoveTrace{
+					RobotID:   r.ID(),
+					Source:    r.location,
+					Target:    n,
+					Timestamp: r.tick,
+				}
 				r.location = n
 				r.act = move
 			}
 		} else {
 			move.SetStatus(common.EndStatus)
+			rTrace = &trace.MoveTrace{
+				RobotID:   r.ID(),
+				Source:    r.location,
+				Target:    r.location,
+				Timestamp: r.tick,
+			}
 			r.act = r.act.GetChild()
 		}
-	case common.ActionTypeStartTask:
 
+	case common.ActionTypeStartTask:
 		r.act = r.act.GetChild()
+		rTrace = trace.TaskExecutionTrace{}
 	case common.ActionTypeEndTask:
 		// mark task complete and remove self task\
 		err := r.World.TaskUpdate(r.task.GetTaskID(), common.Completed)
@@ -100,33 +124,22 @@ func (r *simpleWarehouseRobot) Execute() (graph.Node, common.Action) {
 		}
 		r.task = nil
 		r.act = r.act.GetChild()
+		rTrace = trace.TaskExecutionTrace{}
 	case common.ActionTypeNull:
 		// choose to remain on the same location, no move.
-		return r.Location(), r.act
+		rTrace = trace.TaskExecutionTrace{}
 	default:
 		// do nothing
 
 	}
-	return r.location, r.act
+	return rTrace
 }
 
 // Run is a function that can be run in a concurrent way
 func (r *simpleWarehouseRobot) Run() common.Trace {
-	source := r.location
 	r.tick += 1
 	r.Plan()
-
-	n, act := r.Execute()
-	r.act = act
-	trace := common.Trace{
-		RobotID:   r.ID(),
-		Source:    source,
-		Target:    r.Location(),
-		Timestamp: r.tick,
-	}
-	r.location = n
-	return trace
-	// r.localWorld = worldReader.Observe(r.location)
+	return r.Execute()
 }
 func NewSimpleWarehouseRobot(id common.RobotID, location graph.Node, world common.World) *simpleWarehouseRobot {
 	s := simpleWarehouseRobot{

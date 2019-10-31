@@ -17,87 +17,23 @@
 package test_test
 
 import (
-	"log"
-	"maze/common"
-	"maze/common/robot"
-	"maze/common/task"
-	"maze/common/world"
+	"maze/common/simulation"
 	"testing"
-
-	"github.com/google/uuid"
 )
 
-type centralizedSimulation struct {
-	world common.World
-	tm    common.TaskManager
-}
-
-func CreateCentralizedSimulation() common.Simulation {
-
-	var c = centralizedSimulation{}
-	c.tm = task.NewBasicTaskManager()
-	c.world = world.CreateWorld(c.tm)
-	// c.world = common.CreateBlankWorld()
-	var numRobots = 5
-	for i := 0; i < numRobots; i++ {
-		rID, err := uuid.NewUUID()
-		if err != nil {
-			log.Fatal(err)
-		}
-		c.world.AddRobot(robot.NewSimpleRobot(rID, c.world.GetGraph().Nodes().Node(), c.world, c.tm))
-	}
-	for i := 0; i < 20; i++ {
-		t := task.NewTimePriorityTask()
-		t.Destination = c.world.GetGraph().Nodes().Node()
-		c.tm.AddTask(t)
-	}
-
-	return c
-}
-
-func (sim centralizedSimulation) Init() {
-
-}
-func (sim centralizedSimulation) Run(obs common.Observer) error {
-	for _, i := range sim.world.GetRobots() {
-		trace := i.Run()
-		sim.world.UpdateRobot(i)
-		obs.OnNotify(trace)
-	}
-	obs.OnNotify(nil)
-
-	return nil
-}
-
-func (sim centralizedSimulation) Stop() bool {
-	return true
-}
-
-type basicObserver struct {
+type BasicObserver struct {
 	count int
 }
 
-func (b *basicObserver) OnNotify(data interface{}) {
+func (b *BasicObserver) OnNotify(data interface{}) {
 
 	if data != struct{}{} {
 		b.count += 1
 	}
 }
-
-type traceObserver struct {
-	traces []common.Trace
-}
-
-func (b *traceObserver) OnNotify(data interface{}) {
-	t, ok := data.(common.Trace)
-	if ok {
-		b.traces = append(b.traces, t)
-	}
-}
-
 func TestSimulationRunResult(t *testing.T) {
-	s := CreateCentralizedSimulation()
-	obs := basicObserver{}
+	s := simulation.CreateCentralizedSimulation()
+	obs := BasicObserver{}
 	err := s.Run(&obs)
 	if err != nil {
 		t.Errorf("Execution failed")
@@ -109,23 +45,70 @@ func TestSimulationRunResult(t *testing.T) {
 
 }
 
-func TestSimulationExecuteTask(t *testing.T) {
-	s := CreateCentralizedSimulation()
-	obs := traceObserver{}
-	err := s.Run(&obs)
-	if err != nil {
-		t.Errorf("Execution failed")
-	}
-	if len(obs.traces) == 0 {
-		t.Error("Failed to capture run traces")
-	}
-	found := false
-	for _, i := range obs.traces {
-		if i.RobotID != uuid.Nil {
-			found = true
-		}
-	}
-	if !found {
-		t.Error("No proper traces were generated from the run")
-	}
-}
+//type traceObserver struct {
+//	traces []common.Trace
+//}
+//
+//func (b *traceObserver) OnNotify(data interface{}) {
+//	t, ok := data.(common.Trace)
+//	if ok {
+//		b.traces = append(b.traces, t)
+//	}
+//}
+//
+//
+//func TestSimulationExecuteTask(t *testing.T) {
+//	s := simulation.CreateCentralizedSimulation()
+//	obs := traceObserver{}
+//	err := s.Run(&obs)
+//	if err != nil {
+//		t.Errorf("Execution failed")
+//	}
+//	if len(obs.traces) == 0 {
+//		t.Error("Failed to capture run traces")
+//	}
+//	found := false
+//	for _, i := range obs.traces {
+//		if i.(*trace.MoveTrace).RobotID != uuid.Nil {
+//			found = true
+//		}
+//	}
+//	if !found {
+//		t.Error("No proper traces were generated from the run")
+//	}
+//}
+//
+//type taskAckDistributedObserver struct{
+//	counter int
+//}
+//func (t *taskAckDistributedObserver)OnNotify(data interface{}){
+//	if _, ok:= data.(trace.TaskExecutionTrace); ok{
+//		t.counter --
+//	}
+//}
+//
+//func TestConcurrentSimulation( t *testing.T){
+//	var s = simulation.System{}
+//	s.NumBot = 5
+//	obs := taskAckDistributedObserver{10}
+//	s.Init()
+//	s.Start(&obs)
+//	done := make(chan struct{})
+//	go func(){
+//		for {
+//			if obs.counter ==0{
+//				s.Stop()
+//			}
+//			close(done)
+//		}
+//	}()
+//
+//	select {
+//	case <-done:
+//	// All done!
+//	case <-time.After(500 * time.Millisecond):
+//		t.Error("Failed After 500 ms, timeout")
+//		t.Fail()
+//	}
+//
+//}

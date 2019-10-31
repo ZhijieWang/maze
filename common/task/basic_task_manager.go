@@ -16,7 +16,9 @@
 
 package task
 
-import "maze/common"
+import (
+	"maze/common"
+)
 
 //BasicTaskManager implements a PassiveTaskManager interface, with procedure generation of tasks,
 // to ensure the task queue size greater than the amount of robots
@@ -42,13 +44,14 @@ func (tm *BasicTaskManager) GetTasks(i int) []common.Task {
 
 // TaskUpdate updates the status of the task, referred by taskID
 func (tm *BasicTaskManager) TaskUpdate(taskID common.TaskID, status common.TaskStatus) error {
-
+	if len(tm.taskList) != len(tm.taskMap) {
+		panic("Task List Out of Sync")
+	}
 	t, err := tm.GetByID(taskID)
 	if err != nil {
 		// couldn't find
 		return err
 	}
-
 	err = t.UpdateStatus(status)
 	return err
 }
@@ -62,6 +65,14 @@ func NewBasicTaskManager() *BasicTaskManager {
 
 // GetByID finds the task in Queue by ID
 func (tm *BasicTaskManager) GetByID(taskID common.TaskID) (common.Task, error) {
+	_, ok := tm.taskMap[taskID]
+	if !ok {
+		for _, i := range tm.taskList {
+			if i.GetTaskID() == taskID {
+				panic("Task List Out of Sync")
+			}
+		}
+	}
 	return tm.taskMap[taskID], nil
 
 }
@@ -122,9 +133,8 @@ func (tm *BasicTaskManager) GetBroadcastInfo() interface{} {
 }
 
 func (tm *BasicTaskManager) GetNextTask() common.Task {
-	t := tm.Pop()
-	delete(tm.taskMap, t.GetTaskID())
-	return t
+	return tm.taskList[0]
+
 }
 
 func (tm *BasicTaskManager) HasTasks() bool {

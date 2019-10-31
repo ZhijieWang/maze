@@ -17,16 +17,16 @@ package methods
 
 import (
 	"errors"
+	"github.com/google/uuid"
+	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 	"log"
 	"math/rand"
 	"maze/common"
 	"maze/common/action"
 	"maze/common/task"
-
-	"github.com/google/uuid"
-	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/path"
+	"maze/common/trace"
 )
 
 // TaskGenerator is the generator function for randomly producing tasks
@@ -48,7 +48,7 @@ func TaskGenerator(maxTasks int, w common.World) []common.Task {
 }
 
 func NoMove(r common.Robot, t int) common.Trace {
-	return common.Trace{
+	return &trace.MoveTrace{
 		RobotID:   r.ID(),
 		Source:    r.Location(),
 		Target:    r.Location(),
@@ -71,14 +71,14 @@ func RandMove(w common.World, r common.Robot, t int) common.Trace {
 
 	bufs := graph.NodesOf(locs)
 
-	trace := common.Trace{
+	rTrace := &trace.MoveTrace{
 		RobotID:   r.ID(),
 		Source:    r.Location(),
 		Target:    bufs[rand.Intn(len(bufs))],
 		Timestamp: t,
 	}
 	// r.Location() = trace.Target
-	return trace
+	return rTrace
 
 }
 func NextMove(graph simple.DirectedGraph, start graph.Node) graph.Node {
@@ -86,7 +86,6 @@ func NextMove(graph simple.DirectedGraph, start graph.Node) graph.Node {
 	return graph.From(start.ID()).Node()
 }
 func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
-
 	pt, ok := path.BellmanFordFrom(start, g)
 	if ok {
 		p, _ := pt.To(end.ID())
@@ -95,7 +94,7 @@ func GetPath(start, end common.Location, g graph.Graph) ([]graph.Node, error) {
 		}
 		return p[1:], nil
 	} else {
-		return nil, errors.New("no positive cycle")
+		return nil, errors.New("negative cycle")
 	}
 }
 func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) common.Action {
@@ -106,13 +105,16 @@ func PlanTaskAction(g graph.Graph, location common.Location, task common.Task) c
 		current = start
 	} else {
 		start = action.CreateMoveAction(location, task.GetOrigination())
-		start.(*action.MoveAction).Path, _ = GetPath(location, task.GetOrigination(), g)
+
+		pat, err := GetPath(location, task.GetOrigination(), g)
+		if err != nil {
+			panic(err)
+		}
+		start.(*action.MoveAction).Path = pat
 		start.SetChild(action.CreateBeginTaskAction(location))
 		current = start.GetChild()
 	}
-	//if task.GetDestination()== task.GetOrigination() {
-	//	panic("Start and End overlaps")
-	//}
+
 	p, _ := GetPath(task.GetOrigination(), task.GetDestination(), g)
 	current.SetChild(action.CreateMoveActionWithPath(task.GetOrigination(), task.GetDestination(), p))
 	current.GetChild().SetChild(action.CreateEndTaskAction(task.GetDestination()))
