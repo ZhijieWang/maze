@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package test_test
+package test
 
 import (
 	"github.com/google/uuid"
