@@ -34,6 +34,10 @@ Implemented basic action graph generation and execution. With sufficient tests t
 Fixed some minot code import cycles to make sure the build pass.
 Improve the construct of robots. A robot should have a Init function which is its initialization, a Plan function which can read from senses and context to devise a plan; a Execute function which executes the action plan that derived from Plan function. The overall Plan then Execute can be wrapped into a Run function, as an entry point.
 
+
+Oct 30 2019
+Improved various interface and implementations. The result of Concurrent Simulation is still no ideal. The simulation will run most of time just fine, but sometimes Robots will duplicate claims on certain tasks, resulting in valid task state update from Completed to Completed. To guarantee execution exactly once, either roll transaction execution as at the World implementation, where robots need to submit code blocks such as "if has task, return task, else, return false". Another idea to resolve such issue is to properly implement concurrent data access to the SimulatedTaskManagerSync, which currently relies on base implementation of sync.Map to be safe.
+
 In the plan function, a robot can read its world or many other things. Technically the sensing can be done in another stack layer, constantly pulling or updating the sensor reading. Rather than the main thread triggers the data fetching and wait for cycle to complete.
 
 A typical client and server model will require a sever, which server as many functionality:
