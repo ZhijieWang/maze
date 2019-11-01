@@ -14,14 +14,34 @@
  * limitations under the License.
  */
 
-package main
+package impl_test
 
 import (
-	"fmt"
-	"maze/cmd"
+	"github.com/AsynkronIT/protoactor-go/actor"
+	"maze/impl"
+	"testing"
+	"time"
 )
 
-func main() {
-	cmd.Execute()
-	fmt.Println("hello")
+func TestV2ActorRun(t *testing.T) {
+
+	context := actor.EmptyRootContext
+	var s = make(chan bool)
+	props := actor.PropsFromProducer(func() actor.Actor {
+		return impl.NewSystemActorV2(s)
+	})
+	var pid = context.Spawn(props)
+	context.Send(pid, impl.InitMessageV1{})
+	context.Send(pid, impl.StartMessageV1{})
+	context.Send(pid, impl.EndMessageV1{})
+
+	select {
+
+	case <-s:
+
+	case <-time.After(5000 * time.Millisecond):
+		context.Send(pid, impl.ShutdownMessageV1{})
+		t.Fail()
+	}
+
 }

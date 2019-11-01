@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package implv1
+package impl
 
 import (
 	"github.com/AsynkronIT/protoactor-go/actor"
@@ -25,25 +25,25 @@ import (
 	"maze/common/world"
 )
 
-type InitMessage struct {
+type InitMessageV1 struct {
 }
-type StartMessage struct {
+type StartMessageV1 struct {
 }
-type EndMessage struct {
-}
-
-func NewSystemActor(s chan bool) *SystemActor {
-	return &SystemActor{nil, nil, nil, s}
+type EndMessageV1 struct {
 }
 
-type SystemActor struct {
+func NewSystemActorV1(s chan bool) *SystemActorV1 {
+	return &SystemActorV1{nil, nil, nil, s}
+}
+
+type SystemActorV1 struct {
 	w             common.World
 	robots        []common.Robot
 	taskGenerator func(maxTasks int, w common.World) []common.Task
 	s             chan bool
 }
 
-func (sys *SystemActor) Init() {
+func (sys *SystemActorV1) Init() {
 	log.Print("System Initialized")
 	sys.w = world.CreateWarehouseWorld()
 	for i := 0; i < 10; i++ {
@@ -51,23 +51,23 @@ func (sys *SystemActor) Init() {
 		sys.robots = append(sys.robots, robot.NewSimpleWarehouseRobot(id, sys.w.GetGraph().Node(1), sys.w))
 	}
 }
-func (sys *SystemActor) Run() {
+func (sys *SystemActorV1) Run() {
 	for _, a := range sys.robots {
 		log.Printf("%+v ", a.Run())
 	}
 }
-func (sys *SystemActor) Stop() {
+func (sys *SystemActorV1) Stop() {
 	sys.s <- true
 }
-func (sys *SystemActor) Receive(context actor.Context) {
+func (sys *SystemActorV1) Receive(context actor.Context) {
 	log.Print(context.Message())
 	switch context.Message().(type) {
-	case InitMessage:
+	case InitMessageV1:
 
 		sys.Init()
-	case StartMessage:
+	case StartMessageV1:
 		sys.Run()
-	case EndMessage:
+	case EndMessageV1:
 		sys.Stop()
 	}
 }

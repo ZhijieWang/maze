@@ -30,12 +30,6 @@ import (
 //	|		|		|
 //	4	- 	8 	-	12
 
-func CreateBlankWorld() common.World {
-	s := simpleWorld{}
-	s.grid = simple.NewWeightedUndirectedGraph(1, 10000000)
-	return &s
-}
-
 //CreateWorld generates a network of 12 nodes
 func CreateWorld(tm common.TaskManager) common.World {
 	w := simpleWorld{}

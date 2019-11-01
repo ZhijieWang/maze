@@ -14,35 +14,43 @@
  * limitations under the License.
  */
 
-package implv1_test
+package impl_test
 
 import (
 	"github.com/AsynkronIT/protoactor-go/actor"
-	"maze/implv1"
+	"maze/impl"
 	"testing"
 	"time"
 )
 
-func TestActorRun(t *testing.T) {
+func TestV3ActorRun(t *testing.T) {
 
-	context := actor.EmptyRootContext
-	var s = make(chan bool)
+	ctx := actor.EmptyRootContext
 	props := actor.PropsFromProducer(func() actor.Actor {
-		return implv1.NewSystemActor(s)
+		return impl.NewSystemActorV3()
 	})
-	var pid = context.Spawn(props)
-	context.Send(pid, implv1.InitMessage{})
-	context.Send(pid, implv1.StartMessage{})
-	context.Send(pid, implv1.StartMessage{})
-	context.Send(pid, implv1.StartMessage{})
-	context.Send(pid, implv1.EndMessage{})
+	pid := ctx.Spawn(props)
 
-	select {
+	future := ctx.RequestFuture(pid, impl.StartMessageV1{}, 5*time.Second)
+	msg, _ := future.Result()
 
-	case <-s:
-
-	case <-time.After(5000 * time.Millisecond):
+	switch msg.(type) {
+	case string:
+		if msg != "Done" {
+			t.Errorf("Response is %s", msg)
+			t.Fail()
+		}
+	default:
+		t.Errorf("Response is %+v", msg)
 		t.Fail()
 	}
-
+	//
+	//select {
+	//
+	//case <-ctx.Message():
+	//
+	//case <-time.After(5000 * time.Millisecond):
+	//	ctx.Stop(pid)
+	//	t.Fail()
+	//}
 }

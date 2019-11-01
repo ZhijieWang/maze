@@ -14,33 +14,34 @@
  * limitations under the License.
  */
 
-package implv2_test
+package impl_test
 
 import (
 	"github.com/AsynkronIT/protoactor-go/actor"
-	"maze/implv2"
+	"maze/impl"
 	"testing"
 	"time"
 )
 
-func TestActorRun(t *testing.T) {
+func TestActorV1Run(t *testing.T) {
 
 	context := actor.EmptyRootContext
 	var s = make(chan bool)
 	props := actor.PropsFromProducer(func() actor.Actor {
-		return implv2.NewSystemActor(s)
+		return impl.NewSystemActorV1(s)
 	})
 	var pid = context.Spawn(props)
-	context.Send(pid, implv2.InitMessage{})
-	context.Send(pid, implv2.StartMessage{})
-	context.Send(pid, implv2.EndMessage{})
+	context.Send(pid, impl.InitMessageV1{})
+	context.Send(pid, impl.StartMessageV1{})
+	context.Send(pid, impl.StartMessageV1{})
+	context.Send(pid, impl.StartMessageV1{})
+	context.Send(pid, impl.EndMessageV1{})
 
 	select {
 
 	case <-s:
 
 	case <-time.After(5000 * time.Millisecond):
-		context.Send(pid, implv2.ShutdownMessage{})
 		t.Fail()
 	}
 

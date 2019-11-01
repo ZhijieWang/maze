@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package implv2
+package impl
 
 import (
 	"github.com/AsynkronIT/protoactor-go/actor"
@@ -27,31 +27,33 @@ import (
 	"maze/common/world"
 )
 
-type RobotActor struct {
+type ShutdownMessageV1 struct {
+}
+type RobotActorV1 struct {
 	robot   common.Robot
 	stopSig bool
 	stopped bool
 }
 
-func (state *RobotActor) Receive(ctx actor.Context) {
+func (state *RobotActorV1) Receive(ctx actor.Context) {
 	switch ctx.Message().(type) {
-	case InitMessage:
+	case InitMessageV1:
 		state.robot.Init()
 
-	case StartMessage:
+	case StartMessageV1:
 		state.Run(ctx)
 	}
 }
-func (state *RobotActor) Init(ctx actor.Context) {
+func (state *RobotActorV1) Init(ctx actor.Context) {
 
 }
-func (state *RobotActor) markStopped() {
+func (state *RobotActorV1) markStopped() {
 	state.stopped = true
 }
-func (state *RobotActor) Stop(ctx actor.Context) {
+func (state *RobotActorV1) Stop(ctx actor.Context) {
 	state.stopSig = true
 }
-func (state *RobotActor) Run(ctx actor.Context) {
+func (state *RobotActorV1) Run(ctx actor.Context) {
 	defer state.markStopped()
 	for {
 		if state.stopSig {
@@ -62,17 +64,8 @@ func (state *RobotActor) Run(ctx actor.Context) {
 	}
 }
 
-type InitMessage struct {
-}
-type StartMessage struct {
-}
-type EndMessage struct {
-}
-type ShutdownMessage struct {
-}
-
-func NewSystemActor(done chan bool) *SystemActor {
-	return &SystemActor{done, nil, nil, Uninitialized}
+func NewSystemActorV2(done chan bool) *SystemActorV2 {
+	return &SystemActorV2{done, nil, nil, Uninitialized}
 }
 
 type SystemState int
@@ -84,28 +77,28 @@ const (
 	Stopped
 )
 
-type SystemActor struct {
+type SystemActorV2 struct {
 	done   chan bool
 	robots []*actor.PID
 	w      common.World
 	state  SystemState
 }
 
-func (sys *SystemActor) Receive(context actor.Context) {
+func (sys *SystemActorV2) Receive(context actor.Context) {
 
 	switch context.Message().(type) {
-	case InitMessage:
+	case InitMessageV1:
 		sys.Init(context)
-	case StartMessage:
+	case StartMessageV1:
 		sys.Run(context)
-	case EndMessage:
+	case EndMessageV1:
 		sys.Stop(context)
-	case ShutdownMessage:
+	case ShutdownMessageV1:
 		sys.Shutdown(context)
 	}
 
 }
-func (sys *SystemActor) Init(ctx actor.Context) {
+func (sys *SystemActorV2) Init(ctx actor.Context) {
 	stm := task.CreateSimulatedTaskManagerSync()
 	sys.w = world.CreateWarehouseWorldWithTaskManager(stm)
 	props := actor.PropsFromProducer(sys.SpawnRobotActor)
@@ -117,21 +110,21 @@ func (sys *SystemActor) Init(ctx actor.Context) {
 	}
 
 	for _, r := range sys.robots {
-		ctx.Send(r, InitMessage{})
+		ctx.Send(r, InitMessageV1{})
 	}
 	sys.state = Initialized
 }
-func (sys *SystemActor) SpawnRobotActor() actor.Actor {
-	return &RobotActor{robot.NewSimpleWarehouseRobot(uuid.New(), sys.w.GetGraph().Node(1), sys.w), false, false}
+func (sys *SystemActorV2) SpawnRobotActor() actor.Actor {
+	return &RobotActorV1{robot.NewSimpleWarehouseRobot(uuid.New(), sys.w.GetGraph().Node(1), sys.w), false, false}
 }
-func (sys *SystemActor) Shutdown(ctx actor.Context) {
+func (sys *SystemActorV2) Shutdown(ctx actor.Context) {
 	for _, a := range sys.robots {
-		ctx.Send(a, EndMessage{})
+		ctx.Send(a, EndMessageV1{})
 	}
 	sys.done <- true
 	sys.state = Stopped
 }
-func (sys *SystemActor) Stop(ctx actor.Context) {
+func (sys *SystemActorV2) Stop(ctx actor.Context) {
 	for {
 		if sys.w.HasTasks() {
 
@@ -143,11 +136,11 @@ func (sys *SystemActor) Stop(ctx actor.Context) {
 
 }
 
-func (sys *SystemActor) Run(ctx actor.Context) {
+func (sys *SystemActorV2) Run(ctx actor.Context) {
 	switch sys.state {
 	case Initialized:
 		for _, r := range sys.robots {
-			ctx.Send(r, StartMessage{})
+			ctx.Send(r, StartMessageV1{})
 		}
 		sys.state = Running
 	case Running:

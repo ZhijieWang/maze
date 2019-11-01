@@ -27,10 +27,10 @@ import (
 )
 
 type CentralizedSimulation struct {
-	World      common.World
-	TM         common.TaskManager
-	Iterations int
-	inited     bool
+	World       common.World
+	TM          common.TaskManager
+	Iterations  int
+	initialized bool
 }
 
 func CreateCentralizedSimulation() *CentralizedSimulation {
@@ -61,10 +61,10 @@ func (sim *CentralizedSimulation) Init() {
 		}
 		sim.World.AddTask(t)
 	}
-	sim.inited = true
+	sim.initialized = true
 }
 func (sim *CentralizedSimulation) Run(obs common.Observer) error {
-	if !sim.inited {
+	if !sim.initialized {
 		panic("System enter the run mode before proper initialization")
 	}
 	for i := 0; i < sim.Iterations; i++ {
